@@ -93,7 +93,7 @@ export const startAuthenticationFlow = async (username: string) => {
   } catch (error) {
     console.error("Authentication error:", error);
     if (axios.isAxiosError(error)) {
-      throw new Error(error.response?.data || "Authentication failed");
+      throw new Error(error.response?.data || `Authentication failed ${error}`);
     }
     throw error;
   }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Link from "next/link";
 import {
   Card,
@@ -10,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { BarChart2, CheckCircle2 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { WebSocketService } from "../_services/websocket";
+import { useEffect, useState } from "react";
 
 interface PollOption {
   id: string;
@@ -31,7 +34,32 @@ interface PollCardProps {
 }
 
 export function PollCard({ poll, onVote }: PollCardProps) {
+  const [localPoll, setLocalPoll] = useState(poll);
+
+  useEffect(() => {
+    const wsService = WebSocketService.getInstance();
+
+    const handlePollUpdate = (data: any) => {
+      setLocalPoll((prevPoll) => ({
+        ...prevPoll,
+
+        options: data.options,
+
+        totalVotes: data.totalVotes,
+      }));
+    };
+
+    wsService.subscribe(poll.id, handlePollUpdate);
+
+    return () => {
+      wsService.unsubscribe(poll.id, handlePollUpdate);
+    };
+  }, [poll.id]);
+
   const handleVote = (optionId: string) => {
+    const wsService = WebSocketService.getInstance();
+
+    wsService.vote(poll.id, optionId);
     onVote(poll.id, optionId);
   };
 
@@ -42,7 +70,7 @@ export function PollCard({ poll, onVote }: PollCardProps) {
       </CardHeader>
       <CardContent>
         <RadioGroup onValueChange={handleVote} className="space-y-2">
-          {poll.options.map((option) => (
+          {localPoll.options.map((option) => (
             <div
               key={option.id}
               className="flex items-center justify-between p-2 rounded-md hover:bg-gray-100 transition-colors duration-200"

@@ -20,7 +20,6 @@ export default function PollsPage() {
   const [filteredPolls, setFilteredPolls] = useState<Poll[]>([]);
 
   useEffect(() => {
-    // In a real application, this would be an API call
     const fetchPolls = async () => {
       const mockPolls: Poll[] = [
         {

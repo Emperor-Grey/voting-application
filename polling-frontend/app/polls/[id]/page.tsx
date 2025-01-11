@@ -16,6 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { CalendarIcon, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface PollOption {
   id: string;
@@ -31,6 +32,13 @@ interface Poll {
   createdAt: Date;
 }
 
+interface WebSocketMessage {
+  type: "poll_update";
+  pollId: string;
+  options: PollOption[];
+  totalVotes: number;
+}
+
 const COLORS = [
   "hsl(var(--chart-1))",
   "hsl(var(--chart-2))",
@@ -43,21 +51,101 @@ export default function PollDetailPage() {
   const searchParams = useSearchParams();
   const [poll, setPoll] = useState<Poll | null>(null);
   const [activeIndex, setActiveIndex] = useState<number | undefined>();
+  const [wsStatus, setWsStatus] = useState<
+    "connecting" | "connected" | "error"
+  >("connecting");
+  const [hasVoted, setHasVoted] = useState(false);
 
+  // WebSocket connection setup
   useEffect(() => {
-    const pollDataString = searchParams.get("pollData");
-    if (pollDataString) {
+    const pollId = searchParams.get("id");
+    if (!pollId) return;
+
+    const ws = new WebSocket(`ws://localhost:8080/ws/polls/${pollId}`);
+
+    ws.onopen = () => {
+      console.log("WebSocket connected");
+      setWsStatus("connected");
+      // Subscribe to poll updates
+      ws.send(
+        JSON.stringify({
+          type: "subscribe",
+          pollId: pollId,
+        })
+      );
+    };
+
+    ws.onmessage = (event) => {
       try {
-        const parsedPoll = JSON.parse(pollDataString) as Poll;
-        parsedPoll.createdAt = new Date(parsedPoll.createdAt);
-        setPoll(parsedPoll);
+        const message: WebSocketMessage = JSON.parse(event.data);
+        if (message.type === "poll_update") {
+          setPoll((prevPoll) => {
+            if (!prevPoll) return null;
+            return {
+              ...prevPoll,
+              options: message.options,
+              totalVotes: message.totalVotes,
+            };
+          });
+        }
       } catch (error) {
-        console.error("Error parsing poll data", error);
+        console.error("Error parsing WebSocket message:", error);
       }
-    }
+    };
+
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
+      setWsStatus("error");
+    };
+
+    ws.onclose = () => {
+      setWsStatus("error");
+    };
+
+    // Initial poll data fetch
+    const fetchPollData = async () => {
+      try {
+        const response = await fetch(`/api/polls/${pollId}`);
+        const data = await response.json();
+        setPoll({
+          ...data,
+          createdAt: new Date(data.createdAt),
+        });
+      } catch (error) {
+        console.error("Error fetching poll data:", error);
+      }
+    };
+
+    fetchPollData();
+
+    return () => {
+      ws.close();
+    };
   }, [searchParams]);
 
-  if (!poll) {
+  const handleVote = async (optionId: string) => {
+    if (hasVoted || !poll) return;
+
+    try {
+      // Replace with your actual API endpoint
+      const response = await fetch(`/api/polls/${poll.id}/vote`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ optionId }),
+      });
+
+      if (response.ok) {
+        setHasVoted(true);
+        localStorage.setItem(`voted_${poll.id}`, "true");
+      }
+    } catch (error) {
+      console.error("Error submitting vote:", error);
+    }
+  };
+
+  if (!poll?.id) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
@@ -156,6 +244,12 @@ export default function PollDetailPage() {
 
   return (
     <div className="min-h-screen bg-background p-4 flex items-center justify-center">
+      {wsStatus === "error" && (
+        <div className="fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          Connection lost. Trying to reconnect...
+        </div>
+      )}
+
       <Card className="w-full max-w-5xl shadow-xl">
         <CardHeader className="space-y-4 pb-6 pt-8 px-6 bg-gradient-to-b from-primary/5 via-primary/[0.02] to-transparent">
           <div className="space-y-2">
@@ -185,6 +279,7 @@ export default function PollDetailPage() {
             </div>
           </div>
         </CardHeader>
+
         <CardContent className="grid md:grid-cols-2 gap-8 p-6">
           <div className="h-[400px] flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
@@ -231,13 +326,25 @@ export default function PollDetailPage() {
                       {((option.votes / poll.totalVotes) * 100).toFixed(1)}%)
                     </span>
                   </div>
-                  <Progress
-                    value={(option.votes / poll.totalVotes) * 100}
-                    className="h-3"
-                    style={{
-                      backgroundColor: `${COLORS[index % COLORS.length]}`,
-                    }}
-                  />
+                  <div className="flex gap-2 items-center">
+                    <Progress
+                      value={(option.votes / poll.totalVotes) * 100}
+                      className="h-3"
+                      style={{
+                        backgroundColor: `${COLORS[index % COLORS.length]}20`,
+                      }}
+                    />
+                    {!hasVoted && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleVote(option.id)}
+                        className="shrink-0"
+                      >
+                        Vote
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

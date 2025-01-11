@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { Button } from "@/app/_components/Button";
@@ -26,7 +27,8 @@ export default function LoginPage() {
       router.push("/polls");
     } catch (err) {
       console.error(err);
-      setError("Authentication failed. Please try again.");
+
+      setError((err as any).response?.data?.message);
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +64,9 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="text-red-500 text-sm text-center">{error}</div>
+            <div className="text-red-500 text-sm text-center border border-red-500 p-2">
+              {error}
+            </div>
           )}
 
           <Button type="submit" color="primary" isLoading={isLoading}>
