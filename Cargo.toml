@@ -1,0 +1,33 @@
+[package]
+name = "polling"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+dotenv = "0.15.0"
+uuid = { version = "1.11.1", features = ["v4"] }
+tower-http = { version = "0.6.2", features = ["cors", "trace", "fs"] }
+
+tokio = { version = "1.43.0", features = ["full"] }
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.135"
+
+axum = { version = "0.8.1", features = ["macros"] }
+
+reqwest = "0.12.12"
+
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+
+sqlx = { version = "0.8.3", features = [
+  "mysql",
+  "runtime-tokio-native-tls",
+  "uuid",
+] }
+
+webauthn-rs = { version = "0.5.1", features = [
+  "danger-allow-state-serialisation",
+] }
+tower-sessions = "0.14.0"
+thiserror = "2.0.10"
+http = "1.2.0"
