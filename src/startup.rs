@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::broadcast::Sender;
-use tokio::sync::{Mutex, broadcast};
+use tokio::sync::{broadcast, Mutex};
 use webauthn_rs::prelude::*;
 
 pub struct Data {
@@ -47,9 +47,14 @@ impl Default for AppState {
 }
 impl AppState {
     pub fn new() -> Self {
-        let rp_id = "localhost";
-        let rp_origin = Url::parse("http://localhost:3002").expect("Invalid URL");
-        let builder = WebauthnBuilder::new(rp_id, &rp_origin).expect("Invalid configuration");
+        let rp_id = std::env::var("RP_ID").unwrap_or("localhost".to_string());
+        let rp_origin = Url::parse(
+            std::env::var("RP_ORIGIN")
+                .unwrap_or("http://localhost:3002".to_string())
+                .as_str(),
+        )
+        .expect("Invalid URL");
+        let builder = WebauthnBuilder::new(&rp_id, &rp_origin).expect("Invalid configuration");
         let builder = builder.rp_name("Polling Application");
         let webauthn = Arc::new(builder.build().expect("Invalid configuration"));
         let users = Arc::new(Mutex::new(Data {

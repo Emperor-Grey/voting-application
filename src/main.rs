@@ -35,6 +35,7 @@ mod websocket;
 async fn main() {
     dotenv::dotenv().ok();
     // let db_url = std::env::var("DATABASE_URL").expect("Expected DATABASE_URL");
+    let frontend_url = std::env::var("FRONTEND_URL").expect("Expected FRONTEND_URL");
     set_up_tracing();
 
     let app_state = AppState::new();
@@ -50,8 +51,7 @@ async fn main() {
     //     .expect("Failed to connect to database");
 
     let cors = CorsLayer::new()
-        // Allow `localhost:3002` - your Next.js frontend
-        .allow_origin("http://localhost:3002".parse::<HeaderValue>().unwrap())
+        .allow_origin(frontend_url.parse::<HeaderValue>().unwrap())
         // Allow credentials (cookies, authorization headers, etc.)
         .allow_credentials(true)
         // Allow common HTTP methods
