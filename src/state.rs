@@ -1,36 +1,10 @@
-use serde::{Deserialize, Serialize};
+// src/state.rs
+use crate::models::{poll::Poll, user::Data};
+use reqwest::Url;
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::broadcast::Sender;
 use tokio::sync::{broadcast, Mutex};
-use webauthn_rs::prelude::*;
-
-pub struct Data {
-    pub name_to_id: HashMap<String, Uuid>,
-    pub keys: HashMap<Uuid, Vec<Passkey>>,
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct Poll {
-    pub id: String,
-    pub title: String,
-    pub creator_id: Uuid,
-    pub options: Vec<PollOption>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub is_closed: bool,
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct PollOption {
-    pub id: String,
-    pub text: String,
-    pub votes: i32,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct VoteRequest {
-    pub option_id: String,
-}
+use webauthn_rs::{Webauthn, WebauthnBuilder};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -45,6 +19,7 @@ impl Default for AppState {
         Self::new()
     }
 }
+
 impl AppState {
     pub fn new() -> Self {
         let rp_id =

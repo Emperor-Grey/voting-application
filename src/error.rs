@@ -27,7 +27,7 @@ impl IntoResponse for WebauthnError {
             WebauthnError::Unknown => "Unknown Error",
             WebauthnError::UserHasNoCredentials => "User Has No Credentials",
             WebauthnError::InvalidSessionState(_) => "Deserialising Session failed",
-            WebauthnError::SessionError(_, msg) => "Session Error",
+            WebauthnError::SessionError(_, _msg) => "Session Error",
         };
 
         (StatusCode::INTERNAL_SERVER_ERROR, body).into_response()
