@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::broadcast::Sender;
-use tokio::sync::{Mutex, broadcast};
+use tokio::sync::{broadcast, Mutex};
 use webauthn_rs::prelude::*;
 
 pub struct Data {
@@ -47,10 +47,11 @@ impl Default for AppState {
 }
 impl AppState {
     pub fn new() -> Self {
-        let rp_id = std::env::var("RP_ID").unwrap_or("localhost".to_string());
+        let rp_id =
+            std::env::var("RP_ID").unwrap_or("voting-application-rust.vercel.app".to_string());
         let rp_origin = Url::parse(
             std::env::var("RP_ORIGIN")
-                .unwrap_or("http://localhost:3002".to_string())
+                .unwrap_or("https://voting-application-rust.vercel.app".to_string())
                 .as_str(),
         )
         .expect("Invalid URL");

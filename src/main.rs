@@ -88,8 +88,7 @@ async fn main() {
             SessionManagerLayer::new(session_store)
                 .with_name("webauthn")
                 .with_same_site(SameSite::Strict)
-                // TODO change this to true when running on an HTTPS/production server instead of locally
-                .with_secure(false)
+                .with_secure(true)
                 .with_expiry(Expiry::OnInactivity(Duration::seconds(560))),
         )
         .with_state(new_app_state)
