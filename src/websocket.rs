@@ -93,7 +93,12 @@ pub async fn handle_ws_message(
                 }
             }
         }
-        _ => {}
+        _ => {
+            tracing::info!(
+                "I don't want to handle this, Unknown message: {:?}",
+                message
+            );
+        }
     }
 }
 #[derive(Clone, Serialize, Deserialize)]
@@ -101,6 +106,7 @@ pub struct CreatePollRequest {
     title: String,
     options: Vec<String>,
 }
+
 pub async fn create_poll(
     State(state): State<AppState>,
     session: Session,
