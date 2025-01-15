@@ -55,14 +55,13 @@ export default function PollsPage() {
 
     fetchPolls();
 
-    // Cleanup WebSocket subscriptions
     return () => {
       const wsService = WebSocketService.getInstance();
       polls.forEach((poll) => {
         wsService.unsubscribe(poll.id, () => {});
       });
     };
-  }, []);
+  }, [polls]);
 
   const handlePollUpdate = (pollId: string, updatedPollData: any) => {
     setPolls((currentPolls) =>
