@@ -18,10 +18,14 @@ import { WebSocketService } from "@/app/_services/websocket";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/app/lib/utils";
+import { useParams } from "next/navigation";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
-export default function PollDetailPage({ params }: { params: { id: string } }) {
+export default function PollDetailPage() {
+  const { id } = useParams<{
+    id: string;
+  }>();
   const [poll, setPoll] = useState<Poll | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,7 +33,7 @@ export default function PollDetailPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     const fetchPoll = async () => {
       try {
-        const response = await fetch(`/api/polls/${params.id}`);
+        const response = await fetch(`/api/polls/${id}`);
         if (!response.ok) throw new Error("Failed to fetch poll");
         const data = await response.json();
         setPoll(data);
@@ -48,12 +52,12 @@ export default function PollDetailPage({ params }: { params: { id: string } }) {
       setPoll(updatedPoll);
     };
 
-    wsService.subscribe(params.id, handleUpdate);
+    wsService.subscribe(id, handleUpdate);
 
     return () => {
-      wsService.unsubscribe(params.id, handleUpdate);
+      wsService.unsubscribe(id, handleUpdate);
     };
-  }, [params.id]);
+  }, [id]);
 
   if (loading) {
     return (
