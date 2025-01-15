@@ -4,11 +4,13 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use futures::stream::SplitSink;
 use futures::{SinkExt, StreamExt};
+use http::{HeaderValue, Method};
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use tokio::net::{TcpListener, TcpStream};
 use tokio_tungstenite::WebSocketStream;
 use tokio_tungstenite::{accept_async, tungstenite::Message};
+use tower_http::cors::CorsLayer;
 use tower_sessions::Session;
 use uuid::Uuid;
 
@@ -25,7 +27,7 @@ pub enum WsMessage {
 pub async fn start_ws_server(state: AppState) {
     let addr = SocketAddr::from(([0, 0, 0, 0], 3003));
     let listener = TcpListener::bind(&addr).await.expect("Failed to bind");
-    tracing::info!("WebSocket server listening on: {}", addr);
+    tracing::info!("WebSocket server listening on: ws://{}", addr);
 
     while let Ok((stream, _)) = listener.accept().await {
         let state = state.clone();
@@ -116,7 +118,7 @@ pub async fn create_poll(
     let user_id = session
         .get("user_id")
         .await
-        .map_err(|e| WebauthnError::InvalidSessionState(e))?
+        .map_err(WebauthnError::InvalidSessionState)?
         .ok_or(WebauthnError::UserNotFound)?;
 
     let poll = Poll {
@@ -163,6 +165,20 @@ pub fn poll_routes() -> Router<AppState> {
         .route("/api/polls", get(list_polls))
         .route("/api/polls/{id}", get(get_poll))
         .route("/api/polls/{id}/vote", post(vote_poll))
+}
+
+pub fn websocket_routes() -> Router<AppState> {
+    // CORS configuration specific to WebSocket routes
+    let frontend_url = std::env::var("FRONTEND_URL").unwrap_or("http://localhost:3000".to_string());
+
+    let websocket_cors = CorsLayer::new()
+        .allow_methods([Method::GET]) // Otherwise can't deploy
+        .allow_origin(frontend_url.parse::<HeaderValue>().unwrap())
+        .allow_credentials(true);
+
+    Router::new()
+        .layer(websocket_cors)
+        .route("/ws/polls/{poll_id}", get(poll_websocket_handler))
 }
 
 async fn vote_poll(

@@ -29,7 +29,9 @@ export class WebSocketService {
     this.isConnecting = true;
 
     try {
-      this.ws = new WebSocket("ws://localhost:3003/ws/polls");
+      this.ws = new WebSocket(
+        process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:3003/ws/polls"
+      );
 
       this.ws.onopen = () => {
         console.log("WebSocket connected");

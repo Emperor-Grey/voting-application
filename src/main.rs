@@ -25,7 +25,9 @@ use webauthn_rs::{
     prelude::{PasskeyAuthentication, PublicKeyCredential, RegisterPublicKeyCredential},
     Webauthn, WebauthnBuilder,
 };
-use websocket::{create_poll, get_poll, list_polls, poll_routes, poll_websocket_handler};
+use websocket::{
+    create_poll, get_poll, list_polls, poll_routes, poll_websocket_handler, websocket_routes,
+};
 
 mod error;
 mod startup;
@@ -72,7 +74,7 @@ async fn main() {
     let app: Router = Router::new()
         .layer(cors)
         .merge(poll_routes())
-        .route("/ws/polls/{poll_id}", get(poll_websocket_handler))
+        .merge(websocket_routes())
         .route("/", get(root))
         .route("/api/auth/register_start/{username}", post(start_register))
         .route("/api/auth/register_finish", post(finish_register))
@@ -88,7 +90,7 @@ async fn main() {
                 .with_same_site(SameSite::Strict)
                 // TODO change this to true when running on an HTTPS/production server instead of locally
                 .with_secure(false)
-                .with_expiry(Expiry::OnInactivity(Duration::seconds(360))),
+                .with_expiry(Expiry::OnInactivity(Duration::seconds(560))),
         )
         .with_state(new_app_state)
         .fallback(handler_404);
