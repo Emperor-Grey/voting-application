@@ -1,17 +1,20 @@
 #![allow(dead_code, unused)]
+use axum::http::HeaderName;
 use axum::{
     extract::{Extension, Path},
-    http::{ HeaderValue, StatusCode},
+    http::{HeaderValue, StatusCode},
     response::IntoResponse,
     routing::{get, post, trace_service},
     Json, Router,
 };
 use error::WebauthnError;
+use http::Method;
 use reqwest::{header::CONTENT_TYPE, Url};
 use sqlx::{mysql::MySqlPoolOptions, MySqlPool};
 use startup::AppState;
 use std::{net::SocketAddr, sync::Arc};
 use tokio::net::TcpListener;
+use tower_http::cors::{Any, CorsLayer};
 use tower_sessions::{
     cookie::{time::Duration, SameSite},
     Expiry, MemoryStore, Session, SessionManagerLayer,
@@ -22,12 +25,11 @@ use webauthn_rs::{
     prelude::{PasskeyAuthentication, PublicKeyCredential, RegisterPublicKeyCredential},
     Webauthn, WebauthnBuilder,
 };
-use axum::http::HeaderName;
-use tower_http::cors::{CorsLayer, Any};
-use http::Method;
+use websocket::{create_poll, get_poll, list_polls, poll_routes, poll_websocket_handler};
 
 mod error;
 mod startup;
+mod websocket;
 
 #[tokio::main]
 async fn main() {
@@ -36,34 +38,41 @@ async fn main() {
     set_up_tracing();
 
     let app_state = AppState::new();
+
+    // Dummy clones one for websockets and one for the main app
+    let new_app_state = app_state.clone();
+    let ws_app_state = new_app_state.clone();
+
     let session_store = MemoryStore::default();
 
     // let pool = connect_database(&db_url)
     //     .await
     //     .expect("Failed to connect to database");
-    
+
     let cors = CorsLayer::new()
-    // Allow `localhost:3002` - your Next.js frontend
-    .allow_origin("http://localhost:3002".parse::<HeaderValue>().unwrap())
-    // Allow credentials (cookies, authorization headers, etc.)
-    .allow_credentials(true)
-    // Allow common HTTP methods
-    .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
-    // Allow specific headers that the browser will send
-    .allow_headers([
-        CONTENT_TYPE,
-        HeaderName::from_static("accept"),
-        HeaderName::from_static("authorization"),
-        HeaderName::from_static("x-requested-with"),
-    ])
-    // Expose specific headers that we want the browser to access
-    .expose_headers([
-        HeaderName::from_static("access-control-allow-credentials"),
-        HeaderName::from_static("access-control-allow-origin"),
-    ]);
+        // Allow `localhost:3002` - your Next.js frontend
+        .allow_origin("http://localhost:3002".parse::<HeaderValue>().unwrap())
+        // Allow credentials (cookies, authorization headers, etc.)
+        .allow_credentials(true)
+        // Allow common HTTP methods
+        .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
+        // Allow specific headers that the browser will send
+        .allow_headers([
+            CONTENT_TYPE,
+            HeaderName::from_static("accept"),
+            HeaderName::from_static("authorization"),
+            HeaderName::from_static("x-requested-with"),
+        ])
+        // Expose specific headers that we want the browser to access
+        .expose_headers([
+            HeaderName::from_static("access-control-allow-credentials"),
+            HeaderName::from_static("access-control-allow-origin"),
+        ]);
 
     let app: Router = Router::new()
         .layer(cors)
+        .merge(poll_routes())
+        .route("/ws/polls/{poll_id}", get(poll_websocket_handler))
         .route("/", get(root))
         .route("/api/auth/register_start/{username}", post(start_register))
         .route("/api/auth/register_finish", post(finish_register))
@@ -72,7 +81,6 @@ async fn main() {
             post(start_authentication),
         )
         .route("/api/auth/login_finish", post(finish_authentication))
-        // .with_state(pool)
         .layer(Extension(app_state))
         .layer(
             SessionManagerLayer::new(session_store)
@@ -82,7 +90,12 @@ async fn main() {
                 .with_secure(false)
                 .with_expiry(Expiry::OnInactivity(Duration::seconds(360))),
         )
+        .with_state(new_app_state)
         .fallback(handler_404);
+
+    tokio::spawn(async move {
+        websocket::start_ws_server(ws_app_state).await;
+    });
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     let listener = TcpListener::bind(&addr)
@@ -96,7 +109,10 @@ async fn main() {
 }
 
 async fn handler_404() -> impl IntoResponse {
-    (StatusCode::NOT_FOUND, "nothing to see here")
+    (
+        StatusCode::NOT_FOUND,
+        "nothing to see here mate just go to /login or register to start the flow...",
+    )
 }
 
 fn set_up_tracing() {
@@ -295,6 +311,10 @@ pub async fn finish_authentication(
                     })
                 })
                 .ok_or(WebauthnError::UserHasNoCredentials)?;
+
+            session.insert("user_id", user_unique_id).await?;
+
+            // Returning 201 for some reason i always forget this syntax only for this place...
             StatusCode::OK
         }
         Err(e) => {

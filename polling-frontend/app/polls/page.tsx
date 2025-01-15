@@ -3,61 +3,38 @@
 import { useState, useEffect } from "react";
 import { PollCard } from "@/app/_components/PollCard";
 import { SearchPolls } from "@/app/_components/SearchPolls";
+import { WebSocketService } from "@/app/_services/websocket";
+import { Poll } from "@/types/poll";
 import Link from "next/link";
 import { Button } from "../_components/Button";
 import { PlusCircle } from "lucide-react";
 
-interface Poll {
-  id: string;
-  title: string;
-  options: { id: string; text: string; votes: number }[];
-  totalVotes: number;
-  createdAt: Date;
-}
-
 export default function PollsPage() {
   const [polls, setPolls] = useState<Poll[]>([]);
   const [filteredPolls, setFilteredPolls] = useState<Poll[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPolls = async () => {
-      const mockPolls: Poll[] = [
-        {
-          id: "1",
-          title: "Favorite Programming Language",
-          options: [
-            { id: "1a", text: "JavaScript", votes: 50 },
-            { id: "1b", text: "Python", votes: 30 },
-            { id: "1c", text: "Java", votes: 20 },
-          ],
-          totalVotes: 100,
-          createdAt: new Date("2023-01-01"),
-        },
-        {
-          id: "2",
-          title: "Best Frontend Framework",
-          options: [
-            { id: "2a", text: "React", votes: 80 },
-            { id: "2b", text: "Vue", votes: 50 },
-            { id: "2c", text: "Angular", votes: 30 },
-          ],
-          totalVotes: 160,
-          createdAt: new Date("2023-02-15"),
-        },
-        {
-          id: "3",
-          title: "Preferred Database",
-          options: [
-            { id: "3a", text: "PostgreSQL", votes: 40 },
-            { id: "3b", text: "MongoDB", votes: 35 },
-            { id: "3c", text: "MySQL", votes: 25 },
-          ],
-          totalVotes: 100,
-          createdAt: new Date("2023-03-20"),
-        },
-      ];
-      setPolls(mockPolls);
-      setFilteredPolls(mockPolls);
+      try {
+        const response = await fetch("/api/polls");
+        if (!response.ok) throw new Error("Failed to fetch polls");
+        const data = await response.json();
+
+        // Convert dates from strings to Date objects
+        const pollsWithDates = data.map((poll: Poll) => ({
+          ...poll,
+          createdAt: new Date(poll.createdAt),
+        }));
+
+        setPolls(pollsWithDates);
+        setFilteredPolls(pollsWithDates);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load polls");
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchPolls();
@@ -70,44 +47,27 @@ export default function PollsPage() {
     setFilteredPolls(filtered);
   };
 
+  // We don't need to manually update the state anymore
   const handleVote = (pollId: string, optionId: string) => {
-    setPolls((prevPolls) =>
-      prevPolls.map((poll) => {
-        if (poll.id === pollId) {
-          const updatedOptions = poll.options.map((option) => {
-            if (option.id === optionId) {
-              return { ...option, votes: option.votes + 1 };
-            }
-            return option;
-          });
-          return {
-            ...poll,
-            options: updatedOptions,
-            totalVotes: poll.totalVotes + 1,
-          };
-        }
-        return poll;
-      })
-    );
-    setFilteredPolls((prevFilteredPolls) =>
-      prevFilteredPolls.map((poll) => {
-        if (poll.id === pollId) {
-          const updatedOptions = poll.options.map((option) => {
-            if (option.id === optionId) {
-              return { ...option, votes: option.votes + 1 };
-            }
-            return option;
-          });
-          return {
-            ...poll,
-            options: updatedOptions,
-            totalVotes: poll.totalVotes + 1,
-          };
-        }
-        return poll;
-      })
-    );
+    const wsService = WebSocketService.getInstance();
+    wsService.vote(pollId, optionId);
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-red-500">{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="container max-w-6xl mx-auto px-4 py-8">

@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export interface WebSocketMessage {
-  type: "subscribe" | "poll_update" | "vote";
-  pollId: string;
-  data?: any;
-}
-
 export class WebSocketService {
   private static instance: WebSocketService;
   private ws: WebSocket | null = null;
-  private subscribers: Map<string, ((data: any) => void)[]> = new Map();
+  private subscribers: Map<string, Set<(data: any) => void>> = new Map();
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 5;
+  private reconnectDelay = 1000; // in seconds
+  private isConnecting = false;
 
-  private constructor() {}
+  private constructor() {
+    this.connect();
+  }
 
   static getInstance(): WebSocketService {
     if (!WebSocketService.instance) {
@@ -19,78 +19,99 @@ export class WebSocketService {
     return WebSocketService.instance;
   }
 
-  connect(url: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.ws = new WebSocket(url);
+  private async connect() {
+    if (this.ws?.readyState === WebSocket.OPEN || this.isConnecting) {
+      return;
+    }
+
+    this.isConnecting = true;
+
+    try {
+      this.ws = new WebSocket("ws://localhost:3003/ws/polls");
 
       this.ws.onopen = () => {
         console.log("WebSocket connected");
-        resolve();
+        this.reconnectAttempts = 0;
+        this.reconnectDelay = 1000;
+        this.isConnecting = false;
       };
 
       this.ws.onmessage = (event) => {
-        console.log("WebSocket message received", event);
-
-        const message: WebSocketMessage = JSON.parse(event.data);
-        this.handleMessage(message);
+        const data = JSON.parse(event.data);
+        if (data.poll_id) {
+          const subscribers = this.subscribers.get(data.poll_id);
+          if (subscribers) {
+            subscribers.forEach((callback) => callback(data));
+          }
+        }
       };
 
-      this.ws.onerror = (error) => {
-        console.error("WebSocket error:", error);
-        reject(error);
+      this.ws.onerror = (event) => {
+        console.error("WebSocket error:", event);
       };
 
-      this.ws.onclose = (err) => {
-        console.log("WebSocket closed");
-        // Enjoy the error
-        console.error("WebSocket closed", err);
+      this.ws.onclose = () => {
+        this.isConnecting = false;
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+          console.log(
+            `WebSocket closed, attempting to reconnect... Attempt ${
+              this.reconnectAttempts + 1
+            }`
+          );
+          setTimeout(() => {
+            this.reconnectAttempts++;
+            this.reconnectDelay *= 2;
+            this.connect();
+          }, this.reconnectDelay);
+        } else {
+          console.error("Max reconnection attempts reached");
+        }
       };
-    });
+    } catch (error) {
+      console.error("Failed to establish WebSocket connection:", error);
+      this.isConnecting = false;
+    }
   }
 
   subscribe(pollId: string, callback: (data: any) => void) {
     if (!this.subscribers.has(pollId)) {
-      this.subscribers.set(pollId, []);
+      this.subscribers.set(pollId, new Set());
     }
-    this.subscribers.get(pollId)?.push(callback);
+    this.subscribers.get(pollId)?.add(callback);
 
-    // Send subscription message to server
-    this.send({
-      type: "subscribe",
-      pollId,
-    });
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(
+        JSON.stringify({
+          type: "Subscribe",
+          poll_id: pollId,
+        })
+      );
+    } else {
+      this.connect();
+    }
   }
 
   unsubscribe(pollId: string, callback: (data: any) => void) {
-    const callbacks = this.subscribers.get(pollId) || [];
-    this.subscribers.set(
-      pollId,
-      callbacks.filter((cb) => cb !== callback)
-    );
-  }
-
-  vote(pollId: string, optionId: string) {
-    this.send({
-      type: "vote",
-      pollId,
-      data: { optionId },
-    });
-  }
-
-  private send(message: WebSocketMessage) {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(message));
+    const subscribers = this.subscribers.get(pollId);
+    if (subscribers) {
+      subscribers.delete(callback);
+      if (subscribers.size === 0) {
+        this.subscribers.delete(pollId);
+      }
     }
   }
 
-  private handleMessage(message: WebSocketMessage) {
-    const callbacks = this.subscribers.get(message.pollId) || [];
-    callbacks.forEach((callback) => callback(message.data));
-  }
-
-  disconnect() {
-    this.ws?.close();
-    this.ws = null;
-    this.subscribers.clear();
+  vote(pollId: string, optionId: string) {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(
+        JSON.stringify({
+          type: "Vote",
+          poll_id: pollId,
+          option_id: optionId,
+        })
+      );
+    } else {
+      console.error("WebSocket is not connected");
+    }
   }
 }

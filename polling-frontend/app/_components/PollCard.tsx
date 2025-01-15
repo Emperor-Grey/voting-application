@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import Link from "next/link";
 import {
@@ -13,20 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { WebSocketService } from "../_services/websocket";
 import { useEffect, useState } from "react";
-
-interface PollOption {
-  id: string;
-  text: string;
-  votes: number;
-}
-
-interface Poll {
-  id: string;
-  title: string;
-  options: PollOption[];
-  totalVotes: number;
-  createdAt: Date;
-}
+import { Poll } from "@/types/poll";
 
 interface PollCardProps {
   poll: Poll;
@@ -35,6 +23,7 @@ interface PollCardProps {
 
 export function PollCard({ poll, onVote }: PollCardProps) {
   const [localPoll, setLocalPoll] = useState(poll);
+  const [selectedOption, setSelectedOption] = useState<string>("");
 
   useEffect(() => {
     const wsService = WebSocketService.getInstance();
@@ -42,29 +31,62 @@ export function PollCard({ poll, onVote }: PollCardProps) {
     const handlePollUpdate = (data: any) => {
       setLocalPoll((prevPoll) => ({
         ...prevPoll,
-
         options: data.options,
-
         totalVotes: data.totalVotes,
       }));
     };
 
-    wsService.subscribe(poll.id, handlePollUpdate);
+    try {
+      wsService.subscribe(poll.id, handlePollUpdate);
+    } catch (error) {
+      console.error("Failed to subscribe to poll updates:", error);
+    }
 
     return () => {
-      wsService.unsubscribe(poll.id, handlePollUpdate);
+      try {
+        wsService.unsubscribe(poll.id, handlePollUpdate);
+      } catch (error) {
+        console.error("Failed to unsubscribe from poll updates:", error);
+      }
     };
   }, [poll.id]);
 
   const handleVote = (optionId: string) => {
-    const wsService = WebSocketService.getInstance();
+    if (!optionId) return;
 
-    wsService.vote(poll.id, optionId);
-    onVote(poll.id, optionId);
+    try {
+      const wsService = WebSocketService.getInstance();
+      wsService.vote(poll.id, optionId);
+      onVote(poll.id, optionId);
+      setSelectedOption(optionId);
+    } catch (error) {
+      console.error("Failed to submit vote:", error);
+    }
+  };
+
+  const formatDate = (date: Date | string) => {
+    try {
+      // If it's already a Date object, use it directly
+      const dateObj = date instanceof Date ? date : new Date(date);
+      // Check if the date is valid
+      if (isNaN(dateObj.getTime())) {
+        throw new Error("Invalid date");
+      }
+      return dateObj.toLocaleDateString();
+    } catch (error) {
+      console.error("Date formatting error:", error);
+      return "Date unavailable";
+    }
+  };
+
+  // Calculate percentage safely
+  const calculatePercentage = (votes: number, total: number) => {
+    if (!total) return "0.0";
+    return ((votes / total) * 100).toFixed(1);
   };
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-300 ease-in-out">
+    <Card className="hover:shadow-lg max-h-fit transition-all duration-300 ease-in-out">
       <CardHeader>
         <CardTitle className="text-xl font-semibold">{poll.title}</CardTitle>
       </CardHeader>
@@ -87,23 +109,26 @@ export function PollCard({ poll, onVote }: PollCardProps) {
                   <div
                     className="bg-primary h-2.5 rounded-full"
                     style={{
-                      width: `${(option.votes / poll.totalVotes) * 100}%`,
+                      width: `${calculatePercentage(
+                        option.votes,
+                        poll.totalVotes
+                      )}%`,
                     }}
                   ></div>
                 </div>
                 <span className="text-sm text-muted-foreground">
-                  {((option.votes / poll.totalVotes) * 100).toFixed(1)}%
+                  {calculatePercentage(option.votes, poll.totalVotes)}%
                 </span>
               </div>
             </div>
           ))}
         </RadioGroup>
         <div className="mt-4 flex justify-between items-center text-sm text-muted-foreground">
-          <span>
-            <CheckCircle2 className="inline mr-1 h-4 w-4" />
+          <span className="justify-center items-center flex space-x-1">
+            <CheckCircle2 className="inline mr-1 h-4 w-4 font-semibold" />
             {poll.totalVotes} votes
           </span>
-          <span>Created {poll.createdAt.toLocaleDateString()}</span>
+          <span>Created {formatDate(poll.createdAt)}</span>
         </div>
       </CardContent>
       <CardFooter>
@@ -113,7 +138,7 @@ export function PollCard({ poll, onVote }: PollCardProps) {
             query: {
               pollData: JSON.stringify({
                 ...poll,
-                createdAt: poll.createdAt.toISOString(),
+                createdAt: formatDate(poll.createdAt),
               }),
             },
           }}

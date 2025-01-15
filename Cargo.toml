@@ -12,7 +12,7 @@ tokio = { version = "1.43.0", features = ["full"] }
 serde = { version = "1.0.217", features = ["derive"] }
 serde_json = "1.0.135"
 
-axum = { version = "0.8.1", features = ["macros"] }
+axum = { version = "0.8.1", features = ["macros","ws"] }
 
 reqwest = "0.12.12"
 
@@ -31,3 +31,6 @@ webauthn-rs = { version = "0.5.1", features = [
 tower-sessions = "0.14.0"
 thiserror = "2.0.10"
 http = "1.2.0"
+chrono = { version = "0.4.39", features = ["serde"] }
+tokio-tungstenite = { version = "0.26.1", features = ["tokio-rustls"] }
+futures = "0.3.31"

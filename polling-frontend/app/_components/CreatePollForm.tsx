@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useState } from "react";
@@ -6,15 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PlusCircle, Trash2 } from "lucide-react";
+import { CreatePollRequest } from "@/types/poll";
 
 export default function CreatePollForm() {
   const [title, setTitle] = useState("");
   const [options, setOptions] = useState(["", ""]);
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleAddOption = () => {
-    setOptions([...options, ""]);
+    if (options.length < 4) {
+      setOptions([...options, ""]);
+    }
   };
 
   const handleRemoveOption = (index: number) => {
@@ -30,38 +35,67 @@ export default function CreatePollForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
 
     if (!title.trim()) {
       setError("Please enter a poll title");
+      setIsLoading(false);
       return;
     }
 
     if (options.length < 3) {
-      setError("Please provide atleast three options (min)");
+      setError("Please provide at least three options (min)");
+      setIsLoading(false);
       return;
     }
 
     if (options.length > 4) {
-      setError("only four options are allowed (max)");
+      setError("Only four options are allowed (max)");
+      setIsLoading(false);
       return;
     }
 
     const validOptions = options.filter((option) => option.trim() !== "");
     if (validOptions.length < 3) {
-      setError("Please provide atleast three valid options");
+      setError("Please provide at least three valid options");
+      setIsLoading(false);
       return;
     }
 
     try {
-      // In a real application, this would be an API call
-      // For now, we'll simulate creating a poll
-      console.log("Creating poll:", { title, options: validOptions });
+      const pollData: CreatePollRequest = {
+        title: title.trim(),
+        options: validOptions,
+      };
 
-      // Simulate successful poll creation
+      const response = await fetch("/api/polls", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(pollData),
+      });
+
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(text || "Failed to create poll");
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to create poll");
+      }
+
       router.push("/polls");
-    } catch (error) {
-      console.error(error);
-      setError("An error occurred. Please try again.");
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to create poll");
+    } finally {
+      setIsLoading(false);
     }
   };
 
