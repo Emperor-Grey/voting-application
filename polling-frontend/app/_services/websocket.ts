@@ -7,7 +7,7 @@ export class WebSocketService {
   private subscribers: Map<string, Set<WebSocketCallback>> = new Map();
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
-  private reconnectDelay = 1000; // in milliseconds ---->  1 second
+  private reconnectTimeout = 1000;
   private isConnecting = false;
 
   private constructor() {
@@ -21,7 +21,7 @@ export class WebSocketService {
     return WebSocketService.instance;
   }
 
-  private async connect() {
+  private connect() {
     if (this.ws?.readyState === WebSocket.OPEN || this.isConnecting) {
       return;
     }
@@ -36,7 +36,6 @@ export class WebSocketService {
       this.ws.onopen = () => {
         console.log("WebSocket connected");
         this.reconnectAttempts = 0;
-        this.reconnectDelay = 1000;
         this.isConnecting = false;
 
         // Resubscribe to all polls
@@ -64,16 +63,10 @@ export class WebSocketService {
       this.ws.onclose = () => {
         this.isConnecting = false;
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
-          console.log(
-            `WebSocket closed, attempting to reconnect... Attempt ${
-              this.reconnectAttempts + 1
-            }`
-          );
           setTimeout(() => {
             this.reconnectAttempts++;
-            this.reconnectDelay *= 2;
             this.connect();
-          }, this.reconnectDelay);
+          }, this.reconnectTimeout * Math.pow(2, this.reconnectAttempts));
         } else {
           console.error("Max reconnection attempts reached");
         }
@@ -130,6 +123,42 @@ export class WebSocketService {
     } else {
       console.error("WebSocket is not connected");
       this.connect();
+    }
+  }
+
+  public subscribeToResults(pollId: string) {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(
+        JSON.stringify({
+          type: "SubscribeResults",
+          poll_id: pollId,
+          live: true,
+        })
+      );
+    }
+  }
+
+  public onPollUpdate(callback: (pollId: string, updatedPoll: any) => void) {
+    if (this.ws) {
+      this.ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "PollUpdate" && data.poll) {
+            callback(data.poll_id, data.poll);
+          } else if (data.type === "PollDeleted" && data.poll_id) {
+            callback(data.poll_id, null); // null indicates deletion
+          }
+        } catch (error) {
+          console.error("Error processing WebSocket message:", error);
+        }
+      };
+    }
+  }
+
+  public cleanup() {
+    if (this.ws) {
+      this.ws.close();
+      this.subscribers.clear();
     }
   }
 }

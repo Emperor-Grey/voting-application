@@ -1,21 +1,19 @@
-export function formatDate(date: Date | string) {
-  try {
-    const dateObj = date instanceof Date ? date : new Date(date);
+export function formatDate(date: Date | string): string {
+  if (!date) return "N/A";
 
-    if (isNaN(dateObj.getTime())) {
-      throw new Error("Invalid date");
-    }
-    // Format: "Month DD, YYYY at HH:MM AM/PM"
+  try {
+    const dateObj = typeof date === "string" ? new Date(date) : date;
+    if (isNaN(dateObj.getTime())) return "N/A";
+
     return new Intl.DateTimeFormat("en-US", {
       year: "numeric",
-      month: "long",
+      month: "short",
       day: "numeric",
-      hour: "numeric",
-      minute: "numeric",
-      hour12: true,
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(dateObj);
   } catch (error) {
-    console.error("Date formatting error:", error);
-    return "Date unavailable";
+    console.error("Error formatting date:", error);
+    return "N/A";
   }
 }

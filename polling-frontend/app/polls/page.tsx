@@ -1,25 +1,25 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
 import { PollCard } from "@/app/_components/PollCard";
 import { SearchPolls } from "@/app/_components/SearchPolls";
 import { WebSocketService } from "@/app/_services/websocket";
-import { Poll } from "@/types/poll";
 import Link from "next/link";
 import { Button } from "../_components/Button";
 import { PlusCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { usePollStore } from "@/app/_store/pollStore";
+import { votePoll } from "../lib/api";
 
 export default function PollsPage() {
-  const [polls, setPolls] = useState<Poll[]>([]);
-  const [filteredPolls, setFilteredPolls] = useState<Poll[]>([]);
+  const { polls, setPolls, updatePoll, deletePoll } = usePollStore();
+  const [filteredPolls, setFilteredPolls] = useState(polls);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [votedPolls, setVotedPolls] = useState<Record<string, boolean>>({});
+  const wsService = WebSocketService.getInstance();
 
   useEffect(() => {
-    // Load voted polls from localStorage
     const storedVotedPolls = JSON.parse(
       localStorage.getItem("votedPolls") || "{}"
     );
@@ -30,22 +30,8 @@ export default function PollsPage() {
         const response = await fetch("/api/polls");
         if (!response.ok) throw new Error("Failed to fetch polls");
         const data = await response.json();
-
-        const pollsWithDates = data.map((poll: Poll) => ({
-          ...poll,
-          createdAt: new Date(poll.createdAt),
-        }));
-
-        setPolls(pollsWithDates);
-        setFilteredPolls(pollsWithDates);
-
-        // Set up WebSocket subscriptions for all polls
-        const wsService = WebSocketService.getInstance();
-        pollsWithDates.forEach((poll: Poll) => {
-          wsService.subscribe(poll.id, (updatedPoll) => {
-            handlePollUpdate(poll.id, updatedPoll);
-          });
-        });
+        setPolls(data);
+        setFilteredPolls(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load polls");
       } finally {
@@ -55,39 +41,33 @@ export default function PollsPage() {
 
     fetchPolls();
 
+    // Subscribe to all poll updates
+    wsService.onPollUpdate((pollId, updatedPoll) => {
+      if (updatedPoll === null) {
+        // Handle poll deletion
+        deletePoll(pollId);
+        setFilteredPolls((prev) => prev.filter((p) => p.id !== pollId));
+      } else {
+        // Handle poll update
+        updatePoll(pollId, updatedPoll);
+        setFilteredPolls((prev) =>
+          prev.map((poll) =>
+            poll.id === pollId ? { ...poll, ...updatedPoll } : poll
+          )
+        );
+      }
+    });
+
     return () => {
-      const wsService = WebSocketService.getInstance();
-      polls.forEach((poll) => {
-        wsService.unsubscribe(poll.id, () => {});
-      });
+      // Cleanup WebSocket subscription
+      wsService.cleanup();
     };
-  }, []);
+  }, [setPolls, updatePoll, deletePoll]);
 
-  const handlePollUpdate = (pollId: string, updatedPollData: any) => {
-    setPolls((currentPolls) =>
-      currentPolls.map((poll) =>
-        poll.id === pollId
-          ? {
-              ...poll,
-              options: updatedPollData.options,
-              totalVotes: updatedPollData.totalVotes,
-            }
-          : poll
-      )
-    );
-
-    setFilteredPolls((currentPolls) =>
-      currentPolls.map((poll) =>
-        poll.id === pollId
-          ? {
-              ...poll,
-              options: updatedPollData.options,
-              totalVotes: updatedPollData.totalVotes,
-            }
-          : poll
-      )
-    );
-  };
+  // Update filtered polls when main polls list changes
+  useEffect(() => {
+    setFilteredPolls(polls);
+  }, [polls]);
 
   const handleSearch = (searchTerm: string) => {
     const filtered = polls.filter((poll) =>
@@ -107,17 +87,7 @@ export default function PollsPage() {
     }
 
     try {
-      const response = await fetch(`/api/polls/${pollId}/vote`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ option_id: optionId }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to vote");
-      }
+      await votePoll(pollId, optionId);
 
       // Update voted polls in state and localStorage
       const newVotedPolls = { ...votedPolls, [pollId]: true };
@@ -125,7 +95,6 @@ export default function PollsPage() {
       localStorage.setItem("votedPolls", JSON.stringify(newVotedPolls));
 
       // Send vote through WebSocket
-      const wsService = WebSocketService.getInstance();
       wsService.vote(pollId, optionId);
 
       toast({
@@ -135,7 +104,7 @@ export default function PollsPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: `Failed to submit vote. Please try again.${error}`,
+        description: `Failed to submit vote. Please try again. ${error}`,
         variant: "destructive",
       });
     }

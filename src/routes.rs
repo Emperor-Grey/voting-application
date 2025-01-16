@@ -2,7 +2,7 @@ use crate::{
     config::setup_cors,
     handlers::{
         auth,
-        poll::{create_poll, get_poll, list_polls, vote_poll},
+        poll::{close_poll, create_poll, get_poll, list_polls, reset_poll_votes, vote_poll},
     },
     state::AppState,
 };
@@ -62,6 +62,8 @@ pub fn poll_routes() -> Router<AppState> {
         .route("/api/polls", get(list_polls))
         .route("/api/polls/{id}", get(get_poll))
         .route("/api/polls/{id}/vote", post(vote_poll))
+        .route("/api/polls/{id}/close", post(close_poll))
+        .route("/api/polls/{id}/reset", post(reset_poll_votes))
 }
 
 pub fn websocket_routes() -> Router<AppState> {

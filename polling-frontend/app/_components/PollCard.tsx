@@ -31,16 +31,29 @@ import { formatDate } from "../lib/utils";
 interface PollCardProps {
   poll: Poll;
   onVote: (pollId: string, optionId: string) => Promise<void>;
+  onClose?: (pollId: string) => Promise<void>;
+  onReset?: (pollId: string) => Promise<void>;
+  showControls?: boolean;
 }
 
-export function PollCard({ poll, onVote }: PollCardProps) {
+export function PollCard({
+  poll,
+  onVote,
+  onClose,
+  onReset,
+  showControls = false,
+}: PollCardProps) {
   const [localPoll, setLocalPoll] = useState(poll);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
   const { isAuthenticated } = useAuthStore();
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [selectedOptionText, setSelectedOptionText] = useState<string>("");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     // Check if user has already voted for this poll
@@ -57,15 +70,23 @@ export function PollCard({ poll, onVote }: PollCardProps) {
 
     const handlePollUpdate = (data: any) => {
       setLocalPoll((prevPoll) => {
-        const updatedPoll = {
+        const updatedOptions = data.options.map((option: any) => ({
+          ...option,
+          votes: option.votes,
+        }));
+
+        const newTotalVotes = updatedOptions.reduce(
+          (sum: number, opt: any) => sum + opt.votes,
+          0
+        );
+
+        return {
           ...prevPoll,
-          options: data.options.map((option: any) => ({
-            ...option,
-            percentage: calculatePercentage(option.votes, data.totalVotes),
-          })),
-          totalVotes: data.totalVotes,
+          options: updatedOptions,
+          totalVotes: newTotalVotes,
+          isClosed: data.isClosed,
+          createdAt: data.createdAt || prevPoll.createdAt,
         };
-        return updatedPoll;
       });
     };
 
@@ -110,21 +131,23 @@ export function PollCard({ poll, onVote }: PollCardProps) {
     try {
       await onVote(poll.id, selectedOption);
 
-      // Update local storage to mark this poll as voted
+      // Update local storage
       const votedPolls = JSON.parse(localStorage.getItem("votedPolls") || "{}");
       votedPolls[poll.id] = true;
       localStorage.setItem("votedPolls", JSON.stringify(votedPolls));
       setHasVoted(true);
 
-      // Immediately update the local state
+      // Update local state with new vote count
       setLocalPoll((prevPoll) => {
-        const updatedOptions = prevPoll.options.map((option) => {
-          if (option.id === selectedOption) {
-            return { ...option, votes: option.votes + 1 };
-          }
-          return option;
-        });
-        const newTotalVotes = prevPoll.totalVotes + 1;
+        const updatedOptions = prevPoll.options.map((option) => ({
+          ...option,
+          votes: option.id === selectedOption ? option.votes + 1 : option.votes,
+        }));
+
+        const newTotalVotes = updatedOptions.reduce(
+          (sum, opt) => sum + opt.votes,
+          0
+        );
 
         return {
           ...prevPoll,
@@ -133,9 +156,6 @@ export function PollCard({ poll, onVote }: PollCardProps) {
         };
       });
 
-      const wsService = WebSocketService.getInstance();
-      wsService.vote(poll.id, selectedOption);
-
       toast({
         title: "Vote Submitted",
         description: "Your vote has been recorded successfully.",
@@ -143,7 +163,7 @@ export function PollCard({ poll, onVote }: PollCardProps) {
     } catch (error) {
       toast({
         title: "Error",
-        description: `Failed to submit vote(${error}). Please try again.`,
+        description: `Failed to submit vote. Please try again., ${error}}`,
         variant: "destructive",
       });
     } finally {
@@ -153,9 +173,49 @@ export function PollCard({ poll, onVote }: PollCardProps) {
     }
   };
 
-  const calculatePercentage = (votes: number, total: number) => {
-    if (!total) return "0.0";
+  const calculatePercentage = (votes: number, total: number): string => {
+    if (!total) return "0";
     return ((votes / total) * 100).toFixed(1);
+  };
+
+  const handleResetConfirm = async () => {
+    try {
+      setIsResetting(true);
+      await onReset?.(poll.id);
+
+      // Update local state
+      setLocalPoll((prev) => ({
+        ...prev,
+        options: prev.options.map((opt) => ({
+          ...opt,
+          votes: 0,
+        })),
+        totalVotes: 0,
+      }));
+
+      setShowResetDialog(false);
+    } catch (error) {
+      console.error("Failed to reset votes:", error);
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      setIsDeleting(true);
+      await onClose?.(poll.id);
+      setShowDeleteDialog(false);
+    } catch (error) {
+      console.error("Failed to delete poll:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete poll",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -214,13 +274,32 @@ export function PollCard({ poll, onVote }: PollCardProps) {
             <span>Created {formatDate(localPoll.createdAt)}</span>
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col gap-2">
           <Link href={`/polls/${poll.id}`} className="w-full">
             <Button variant="outline" className="w-full">
               <BarChart2 className="mr-2 h-4 w-4" />
               View Detailed Results
             </Button>
           </Link>
+
+          {showControls && (
+            <div className="flex gap-2 w-full">
+              <Button
+                variant="destructive"
+                className="w-full"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                Delete Poll
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setShowResetDialog(true)}
+              >
+                Reset Votes
+              </Button>
+            </div>
+          )}
         </CardFooter>
       </Card>
 
@@ -241,6 +320,80 @@ export function PollCard({ poll, onVote }: PollCardProps) {
               className="bg-primary"
             >
               {isVoting ? "Voting..." : "Confirm Vote"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {showControls && (
+        <>
+          <AlertDialog
+            open={showConfirmDialog}
+            onOpenChange={setShowConfirmDialog}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Close Poll</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to close this poll? This action cannot
+                  be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteConfirm}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Close Poll
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reset Poll Votes</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to reset all votes for this poll? This
+                  action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isResetting}>
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleResetConfirm}
+                  disabled={isResetting}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {isResetting ? "Resetting..." : "Reset Votes"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      )}
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Poll</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this poll? This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete Poll"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

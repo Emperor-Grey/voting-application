@@ -11,6 +11,7 @@ use tokio_tungstenite::{accept_async, tungstenite::Message};
 use crate::{models::poll::Poll, state::AppState};
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub enum WsMessage {
     Subscribe { poll_id: String },
     Vote { poll_id: String, option_id: String },

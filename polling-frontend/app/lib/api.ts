@@ -1,3 +1,4 @@
+import { CreatePollRequest } from "@/types/poll";
 import {
   startRegistration,
   startAuthentication,
@@ -97,4 +98,98 @@ export const startAuthenticationFlow = async (username: string) => {
     }
     throw error;
   }
+};
+
+export const closePoll = async (pollId: string) => {
+  const response = await fetch(`/api/polls/${pollId}/close`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to close poll");
+  }
+
+  return response.json();
+};
+
+export const resetPollVotes = async (pollId: string) => {
+  const response = await fetch(`/api/polls/${pollId}/reset`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to reset poll votes");
+  }
+
+  return response.json();
+};
+
+export const getPollResults = async (
+  pollId: string,
+  options?: { live?: boolean; closed?: boolean; creator?: string }
+) => {
+  const params = new URLSearchParams();
+  if (options?.live) params.append("live", "true");
+  if (options?.closed) params.append("closed", "true");
+  if (options?.creator) params.append("creator", options.creator);
+
+  const response = await fetch(`/api/polls/${pollId}/results?${params}`);
+  if (!response.ok) throw new Error("Failed to fetch poll results");
+  return response.json();
+};
+
+export const createPoll = async (data: CreatePollRequest) => {
+  const response = await fetch("/api/polls", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to create poll");
+  }
+
+  return response.json();
+};
+
+export const votePoll = async (pollId: string, optionId: string) => {
+  const response = await fetch(`/api/polls/${pollId}/vote`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ option_id: optionId }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to vote");
+  }
+
+  return response.json();
+};
+
+export const deletePoll = async (pollId: string) => {
+  const response = await fetch(`/api/polls/${pollId}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to delete poll");
+  }
+
+  return response.json();
 };

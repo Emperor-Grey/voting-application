@@ -1,5 +1,7 @@
 use axum::extract::State;
-use axum::{Json, extract::Path, response::IntoResponse};
+use axum::{extract::Path, response::IntoResponse, Json};
+use http::StatusCode;
+use serde_json::json;
 use tower_sessions::Session;
 use uuid::Uuid;
 
@@ -23,6 +25,7 @@ pub async fn create_poll(
         id: Uuid::new_v4().to_string(),
         title: req.title,
         creator_id: user_id,
+        total_votes: 0,
         options: req
             .options
             .into_iter()
@@ -77,4 +80,99 @@ pub async fn vote_poll(
     } else {
         Err(WebauthnError::Unknown)
     }
+}
+
+pub async fn close_poll(
+    State(state): State<AppState>,
+    Path(poll_id): Path<String>,
+    session: Session,
+) -> Result<impl IntoResponse, WebauthnError> {
+    let username: String = session
+        .get("username")
+        .await?
+        .ok_or(WebauthnError::NotAuthenticated)?;
+
+    let mut polls = state.polls.lock().await;
+    let poll = polls.get_mut(&poll_id).ok_or(WebauthnError::Unknown)?;
+
+    // Verify that the user is the poll creator
+    if poll.creator_id != username.to_string() {
+        return Err(WebauthnError::Unauthorized);
+    }
+
+    poll.is_closed = true;
+
+    // Broadcast the update
+    let _ = state.poll_updates.send((poll_id.clone(), poll.clone()));
+
+    Ok(Json(poll.clone()))
+}
+
+pub async fn reset_poll_votes(
+    State(state): State<AppState>,
+    Path(poll_id): Path<String>,
+    session: Session,
+) -> Result<impl IntoResponse, WebauthnError> {
+    let username: String = session
+        .get("username")
+        .await?
+        .ok_or(WebauthnError::NotAuthenticated)?;
+
+    let mut polls = state.polls.lock().await;
+    let poll = polls.get_mut(&poll_id).ok_or(WebauthnError::Unknown)?;
+
+    // Verify that the user is the poll creator
+    if poll.creator_id != username.to_string() {
+        return Err(WebauthnError::Unauthorized);
+    }
+
+    // Reset votes for all options
+    for option in poll.options.iter_mut() {
+        option.votes = 0;
+    }
+
+    // Broadcast the update
+    let _ = state.poll_updates.send((poll_id.clone(), poll.clone()));
+
+    Ok(Json(poll.clone()))
+}
+
+pub async fn delete_poll(
+    State(state): State<AppState>,
+    Path(poll_id): Path<String>,
+    session: Session,
+) -> Result<impl IntoResponse, WebauthnError> {
+    let username: String = session
+        .get("username")
+        .await?
+        .ok_or(WebauthnError::NotAuthenticated)?;
+
+    let mut polls = state.polls.lock().await;
+
+    // Clone the poll before removing it
+    let poll = polls.get(&poll_id).cloned().ok_or(WebauthnError::Unknown)?;
+
+    // Verify that the user is the poll creator
+    if poll.creator_id != username.to_string() {
+        return Err(WebauthnError::Unauthorized);
+    }
+
+    // Remove the poll
+    polls.remove(&poll_id);
+
+    // Broadcast the deletion
+    let _ = state.poll_updates.send((
+        poll_id.clone(),
+        Poll {
+            id: poll_id,
+            title: "".to_string(),
+            creator_id: "".to_string(),
+            options: vec![],
+            total_votes: 0,
+            created_at: chrono::Utc::now(),
+            is_closed: true,
+        },
+    ));
+
+    Ok(StatusCode::NO_CONTENT)
 }
