@@ -61,7 +61,7 @@ export default function PollsPage() {
         wsService.unsubscribe(poll.id, () => {});
       });
     };
-  }, [polls]);
+  }, []);
 
   const handlePollUpdate = (pollId: string, updatedPollData: any) => {
     setPolls((currentPolls) =>
