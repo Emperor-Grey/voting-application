@@ -5,12 +5,13 @@ edition = "2021"
 
 [dependencies]
 dotenv = "0.15.0"
-uuid = { version = "1.11.1", features = ["v4"] }
+uuid = { version = "1.12.0", features = ["v4"] }
+base64 = "0.22.1"
 tower-http = { version = "0.6.2", features = ["cors", "trace", "fs"] }
 
 tokio = { version = "1.43.0", features = ["full"] }
 serde = { version = "1.0.217", features = ["derive"] }
-serde_json = "1.0.135"
+serde_json = "1.0.137"
 
 axum = { version = "0.8.1", features = ["macros","ws"] }
 
@@ -29,8 +30,15 @@ webauthn-rs = { version = "0.5.1", features = [
   "danger-allow-state-serialisation",
 ] }
 tower-sessions = "0.14.0"
-thiserror = "2.0.10"
+thiserror = "2.0.11"
 http = "1.2.0"
 chrono = { version = "0.4.39", features = ["serde"] }
 tokio-tungstenite = { version = "0.26.1", features = ["tokio-rustls"] }
 futures = "0.3.31"
+
+tokio-test = "0.4.4"
+axum-test = "17.1.0"
+
+[dev-dependencies]
+tokio-test = "0.4.4"
+tokio-macros = "2.5.0"

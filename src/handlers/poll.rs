@@ -1,7 +1,6 @@
 use axum::extract::State;
 use axum::{extract::Path, response::IntoResponse, Json};
 use http::StatusCode;
-use serde_json::json;
 use tower_sessions::Session;
 use uuid::Uuid;
 
@@ -14,17 +13,16 @@ pub async fn create_poll(
     session: Session,
     Json(req): Json<CreatePollRequest>,
 ) -> Result<impl IntoResponse, WebauthnError> {
-    // Fix the error handling for session
-    let user_id = session
-        .get("user_id")
+    let username = session
+        .get("username")
         .await
-        .map_err(WebauthnError::InvalidSessionState)?
-        .ok_or(WebauthnError::UserNotFound)?;
+        .map_err(|_| WebauthnError::NotAuthenticated)?
+        .ok_or(WebauthnError::NotAuthenticated)?;
 
     let poll = Poll {
         id: Uuid::new_v4().to_string(),
         title: req.title,
-        creator_id: user_id,
+        creator_id: username,
         total_votes: 0,
         options: req
             .options
@@ -96,7 +94,7 @@ pub async fn close_poll(
     let poll = polls.get_mut(&poll_id).ok_or(WebauthnError::Unknown)?;
 
     // Verify that the user is the poll creator
-    if poll.creator_id != username.to_string() {
+    if poll.creator_id != username {
         return Err(WebauthnError::Unauthorized);
     }
 
@@ -122,7 +120,7 @@ pub async fn reset_poll_votes(
     let poll = polls.get_mut(&poll_id).ok_or(WebauthnError::Unknown)?;
 
     // Verify that the user is the poll creator
-    if poll.creator_id != username.to_string() {
+    if poll.creator_id != username {
         return Err(WebauthnError::Unauthorized);
     }
 
@@ -153,7 +151,7 @@ pub async fn delete_poll(
     let poll = polls.get(&poll_id).cloned().ok_or(WebauthnError::Unknown)?;
 
     // Verify that the user is the poll creator
-    if poll.creator_id != username.to_string() {
+    if poll.creator_id != username {
         return Err(WebauthnError::Unauthorized);
     }
 

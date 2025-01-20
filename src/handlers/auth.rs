@@ -1,8 +1,8 @@
 use axum::{
-    Json,
     extract::{Extension, Path},
     http::StatusCode,
     response::IntoResponse,
+    Json,
 };
 use tower_sessions::Session;
 use uuid::Uuid;
@@ -171,6 +171,14 @@ pub async fn finish_authentication(
         Ok(auth_result) => {
             let mut users_guard = app_state.users.lock().await;
 
+            // Get username from user_id
+            let username = users_guard
+                .name_to_id
+                .iter()
+                .find(|(_, &id)| id == user_unique_id)
+                .map(|(name, _)| name.clone())
+                .ok_or(WebauthnError::UserNotFound)?;
+
             users_guard
                 .keys
                 .get_mut(&user_unique_id)
@@ -181,9 +189,10 @@ pub async fn finish_authentication(
                 })
                 .ok_or(WebauthnError::UserHasNoCredentials)?;
 
+            // Set both user_id and username in session
             session.insert("user_id", user_unique_id).await?;
+            session.insert("username", username).await?;
 
-            // Returning 201 for some reason i always forget this syntax only for this place...
             StatusCode::OK
         }
         Err(e) => {
