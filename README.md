@@ -1,6 +1,6 @@
 # Polling Application with WebAuthn Authentication
 
-A secure polling application built with Rust (backend) and Next.js (frontend) that uses WebAuthn for passwordless authentication.
+A secure polling application built with Rust (backend) and Next.js (frontend) that uses WebAuthn for passwordless authentication and real-time updates.
 
 *NOTE*: The postman docs for the passkey authentication is present at the [Postman Docs](https://work22-1548.postman.co/workspace/1f8130b4-6f2e-43b5-822c-9a93df8e4788/collection/28107246-ba693a87-e9e1-4c35-a953-1c9e7fa06f13?origin=tab-menu)
 
@@ -8,9 +8,10 @@ A secure polling application built with Rust (backend) and Next.js (frontend) th
 
 - Passwordless authentication using WebAuthn/Passkeys
 - Real-time poll updates via WebSocket connections
-- Create and vote on polls
-- Responsive frontend built with Next.js and Tailwind CSS
-- RESTful API built with Axum framework
+- Create, manage, and vote on polls
+- Interactive data visualization with charts
+- Responsive design with dark/light mode support
+- Protected routes and session management
 
 ## Tech Stack
 
@@ -18,41 +19,51 @@ A secure polling application built with Rust (backend) and Next.js (frontend) th
 - **Web Framework**: [Axum](https://github.com/tokio-rs/axum)
 - **WebSocket**: tokio-tungstenite
 - **Authentication**: [WebAuthn-rs](https://github.com/kanidm/webauthn-rs)
+- **Database**: MySQL with SQLx
 - **Session Management**: tower-sessions
 - **Async Runtime**: [Tokio](https://tokio.rs)
+- **Error Handling**: thiserror
 - **Logging**: tracing & tracing-subscriber
 
 ### Frontend (Next.js)
-- **Framework**: Next.js 13+ (App Router)
-- **Styling**: Tailwind CSS
+- **Framework**: Next.js 15+ (App Router)
+- **Styling**: Tailwind CSS with CSS Variables
 - **UI Components**: shadcn/ui
 - **State Management**: Zustand
-- **Charts**: Recharts
+- **Data Visualization**: Recharts
 - **WebAuthn Client**: @simplewebauthn/browser
+- **HTTP Client**: Axios
+- **Font**: Geist Sans & Geist Mono
 
 ## Project Structure
 
 ```
 ---------------------------------------------------------------------------------------------------
 
-├── src/
-│   ├── handlers/        # Request handlers
-│   ├── models/          # Data models
-│   ├── config.rs        # Configuration
-│   ├── error.rs         # Error handling
-│   ├── lib.rs           # Imports
-|   ├── routes.rs        # Routes for all the stuff 
-|   ├── state.rs         # Application state (something that i pass all the time) 
-|   ├── wesocet.rs       # Websocket's stuff for voting... 
-
----------------------------------------------------------------------------------------------------
+├── polling-backend/
+│ ├── src/
+│ │ ├── handlers/ # Request handlers for auth and polls
+│ │ ├── models/ # Data models and database schemas
+│ │ ├── config.rs # Application configuration
+│ │ ├── error.rs # Error handling
+│ │ ├── routes.rs # API route definitions
+│ │ ├── state.rs # Application state management
+│ │ └── websocket.rs # WebSocket implementation
+│ └── tests/ # Integration tests
 │
-└── polling-frontend/    # Next.js frontend application
-    ├── app/            # Next.js app directory
-    ├── components/     # React components
-    ├── lib/           # Utility functions
-    └── types/         # TypeScript types
-    ... so on i am lazy to type as i manually types this things (TLDR: it's too damn big cuz shadcn)
+└── polling-frontend/
+├── app/ # Next.js app directory
+│ ├── components/ # Shared components
+│ ├── services/ # WebSocket and API services
+│ ├── store/ # Zustand state management
+│ ├── polls/ # Poll-related pages
+│ └── lib/ # Utility functions
+├── components/ # UI components
+├── hooks/ # Custom React hooks
+├── types/ # TypeScript type definitions
+└── public/ # Static assets
+
+... so on i am lazy to type as i manually types this things (TLDR: it's too damn big cuz shadcn)
     
 ---------------------------------------------------------------------------------------------------
 
@@ -63,13 +74,15 @@ A secure polling application built with Rust (backend) and Next.js (frontend) th
 ### Prerequisites
 - Rust 1.70+
 - Node.js 18+
+- MySQL Database
 - npm or yarn
 
 ### Backend Setup
 
 1. Clone the repository
-2. Create a `.env` file in the root directory(check .env.example) with:
+2. Create a `.env` file in the root directory with:
 ```env
+DATABASE_URL=mysql://user:password@localhost/dbname
 RP_ID=localhost
 RP_ORIGIN=http://localhost:3000
 FRONTEND_URL=http://localhost:3000
@@ -77,7 +90,8 @@ FRONTEND_URL=http://localhost:3000
 
 3. Run the backend server:
 ```bash
-cargo run 
+cd polling-backend
+cargo run
 ```
 
 The server will start on http://localhost:3000
@@ -96,7 +110,7 @@ npm install
 yarn install
 ```
 
-3. Create a .env file in the polling-frontend directory:
+3. Create a `.env.local` file:
 ```env
 NEXT_PUBLIC_WS_URL=ws://localhost:3003/ws/polls
 NEXT_PUBLIC_API_URL=http://localhost:3000
@@ -113,10 +127,29 @@ The frontend will be available at http://localhost:3002
 
 ## API Endpoints
 
+### Authentication
 - `POST /auth/register/start/:username` - Start registration flow
 - `POST /auth/register/finish` - Complete registration
 - `POST /auth/login/start/:username` - Start authentication flow
 - `POST /auth/login/finish` - Complete authentication
-- `POST /api/polls`: Create a new poll.
-- `GET /api/polls/[pollId]`: Get poll details (SSR).
-- `POST /api/polls/[pollId]/vote`: Cast a vote for a poll option.
+- `GET /auth/me` - Get current user
+
+### Polls
+- `GET /api/polls` - List all polls
+- `POST /api/polls` - Create a new poll
+- `GET /api/polls/:id` - Get poll details
+- `POST /api/polls/:id/vote` - Cast a vote
+- `POST /api/polls/:id/reset` - Reset poll votes
+- `POST /api/polls/:id/close` - Close a poll
+
+## Docker Support
+
+The application includes Docker configuration for containerized deployment. Build and run using:
+
+```bash
+docker compose up --build
+```
+
+## License
+
+This project is open-source and available under the MIT license.
