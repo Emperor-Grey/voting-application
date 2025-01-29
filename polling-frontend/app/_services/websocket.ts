@@ -29,10 +29,17 @@ export class WebSocketService {
     this.isConnecting = true;
 
     try {
-      this.ws = new WebSocket(
-        `${process.env.NEXT_PUBLIC_WS_URL}/ws/polls` ||
-          "ws://localhost:3003/ws/polls"
-      );
+      // Determine if we're in production
+      const isProduction = process.env.NODE_ENV === "production";
+
+      // Use WSS in production, WS in development
+      const wsProtocol = isProduction ? "wss://" : "ws://";
+      const wsBaseUrl = process.env.NEXT_PUBLIC_WS_URL || "localhost:3003";
+
+      // Remove any existing protocol
+      const cleanWsUrl = wsBaseUrl.replace(/^(wss?:\/\/)/, "");
+
+      this.ws = new WebSocket(`${wsProtocol}${cleanWsUrl}/ws/polls`);
 
       this.ws.onopen = () => {
         console.log("WebSocket connected");

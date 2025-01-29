@@ -1,4 +1,4 @@
-use http::{HeaderName, HeaderValue, Method, header::CONTENT_TYPE};
+use http::{header::CONTENT_TYPE, HeaderName, HeaderValue, Method};
 use tower_http::cors::CorsLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -13,10 +13,18 @@ pub fn setup_tracing() {
 }
 
 pub fn setup_cors() -> CorsLayer {
-    let frontend_url = std::env::var("FRONTEND_URL").expect("Expected FRONTEND_URL");
+    let frontend_urls: Vec<String> = std::env::var("FRONTEND_URL")
+        .unwrap_or_else(|_| "http://localhost:3002,https://your-app.vercel.app".to_string())
+        .split(',')
+        .map(|s| s.to_string())
+        .collect();
+
+    let origins = frontend_urls
+        .iter()
+        .map(|url| url.parse::<HeaderValue>().unwrap())
+        .collect::<Vec<HeaderValue>>();
 
     CorsLayer::new()
-        .allow_origin(frontend_url.parse::<HeaderValue>().unwrap())
         .allow_credentials(true)
         .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
         .allow_headers([
@@ -25,6 +33,7 @@ pub fn setup_cors() -> CorsLayer {
             HeaderName::from_static("authorization"),
             HeaderName::from_static("x-requested-with"),
         ])
+        .allow_origin(origins)
         .expose_headers([
             HeaderName::from_static("access-control-allow-credentials"),
             HeaderName::from_static("access-control-allow-origin"),

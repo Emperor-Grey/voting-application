@@ -67,12 +67,20 @@ pub fn poll_routes() -> Router<AppState> {
 }
 
 pub fn websocket_routes() -> Router<AppState> {
-    // CORS configuration specific to WebSocket routes
-    let frontend_url = std::env::var("FRONTEND_URL").unwrap_or("http://localhost:3000".to_string());
+    let frontend_urls: Vec<String> = std::env::var("FRONTEND_URL")
+        .unwrap_or_else(|_| "http://localhost:3002,https://your-app.vercel.app".to_string())
+        .split(',')
+        .map(|s| s.to_string())
+        .collect();
+
+    let origins = frontend_urls
+        .iter()
+        .map(|url| url.parse::<HeaderValue>().unwrap())
+        .collect::<Vec<HeaderValue>>();
 
     let websocket_cors = CorsLayer::new()
-        .allow_methods([Method::GET]) // Otherwise can't deploy
-        .allow_origin(frontend_url.parse::<HeaderValue>().unwrap())
+        .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
+        .allow_origin(origins)
         .allow_credentials(true);
 
     Router::new()
