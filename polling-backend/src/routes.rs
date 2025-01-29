@@ -79,7 +79,7 @@ pub fn websocket_routes() -> Router<AppState> {
         .collect::<Vec<HeaderValue>>();
 
     let websocket_cors = CorsLayer::new()
-        .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
+        .allow_methods([Method::GET])
         .allow_origin(origins)
         .allow_credentials(true);
 
