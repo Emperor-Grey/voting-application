@@ -1,4 +1,4 @@
-import { CreatePollRequest } from "@/types/poll";
+import { CreatePollRequest } from "@/app/_types/poll";
 import {
   startRegistration,
   startAuthentication,

@@ -7,11 +7,11 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+} from "@/app/_components/ui/card";
+import { Button } from "@/app/_components/ui/button";
 import { BarChart2, CheckCircle2 } from "lucide-react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/app/_components/ui/radio-group";
+import { Label } from "@/app/_components/ui/label";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,12 +21,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@/app/_components/ui/alert-dialog";
 import { WebSocketService } from "../_services/websocket";
-import { Poll } from "@/types/poll";
-import { toast } from "@/hooks/use-toast";
+import { Poll } from "@/app/_types/poll";
+import { toast } from "@/app/_hooks/use-toast";
 import { useAuthStore } from "../_store/store";
-import { formatDate } from "../lib/utils";
+import { formatDate } from "../_lib/utils";
 
 interface PollCardProps {
   poll: Poll;

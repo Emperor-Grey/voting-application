@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Poll } from "@/types/poll";
+import { Poll } from "@/app/_types/poll";
 
 interface PollStore {
   polls: Poll[];

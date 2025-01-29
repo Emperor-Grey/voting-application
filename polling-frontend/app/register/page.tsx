@@ -1,12 +1,12 @@
 "use client";
 
-import { Button } from "@/app/_components/Button";
-import { startRegistrationFlow } from "@/app/lib/api";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { startRegistrationFlow } from "../_lib/api";
+import { Label } from "../_components/ui/label";
+import { Input } from "../_components/ui/input";
+import { Button } from "../_components/Button";
 import Link from "next/link";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("");

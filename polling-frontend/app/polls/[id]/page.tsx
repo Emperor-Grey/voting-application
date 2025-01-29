@@ -13,12 +13,17 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { Poll } from "@/types/poll";
+import { Poll } from "@/app/_types/poll";
 import { WebSocketService } from "@/app/_services/websocket";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { formatDate } from "@/app/lib/utils";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/_components/ui/card";
+import { Badge } from "@/app/_components/ui/badge";
 import { useParams } from "next/navigation";
+import { formatDate } from "@/app/_lib/utils";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 

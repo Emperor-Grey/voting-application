@@ -1,3 +1,13 @@
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export default function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+// Also export it as a named constant if needed
+export const cnFunction = cn;
+
 export function formatDate(date: Date | string): string {
   if (!date) return "N/A";
 

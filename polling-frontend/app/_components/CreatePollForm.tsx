@@ -3,11 +3,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/app/_components/ui/button";
+import { Input } from "@/app/_components/ui/input";
+import { Label } from "@/app/_components/ui/label";
 import { PlusCircle, Trash2 } from "lucide-react";
-import { CreatePollRequest } from "@/types/poll";
+import { CreatePollRequest } from "@/app/_types/poll";
 
 export default function CreatePollForm() {
   const [title, setTitle] = useState("");

@@ -4,9 +4,8 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/app/_store/store";
 import { PollCard } from "@/app/_components/PollCard";
-import { closePoll, resetPollVotes } from "@/app/lib/api";
-import { toast } from "@/hooks/use-toast";
-import { Poll } from "@/types/poll";
+import { toast } from "@/app/_hooks/use-toast";
+import { Poll } from "@/app/_types/poll";
 import { usePollStore } from "@/app/_store/pollStore";
 
 export default function ManagePollsPage() {

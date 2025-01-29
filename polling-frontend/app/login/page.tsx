@@ -2,12 +2,12 @@
 "use client";
 
 import { Button } from "@/app/_components/Button";
-import { startAuthenticationFlow } from "@/app/lib/api";
 import { useAuthStore } from "@/app/_store/store";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/app/_components/ui/input";
+import { startAuthenticationFlow } from "../_lib/api";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");

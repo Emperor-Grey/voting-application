@@ -7,9 +7,9 @@ import { WebSocketService } from "@/app/_services/websocket";
 import Link from "next/link";
 import { Button } from "../_components/Button";
 import { PlusCircle } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/app/_hooks/use-toast";
 import { usePollStore } from "@/app/_store/pollStore";
-import { votePoll } from "../lib/api";
+import { votePoll } from "../_lib/api";
 
 export default function PollsPage() {
   const { polls, setPolls, updatePoll, deletePoll } = usePollStore();

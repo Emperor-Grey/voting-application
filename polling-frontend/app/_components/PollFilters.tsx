@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/app/_components/ui/button";
 
 interface PollFiltersProps {
   onFilterChange: (filters: { closed?: boolean; creator?: string }) => void;
