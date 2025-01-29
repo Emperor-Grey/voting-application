@@ -62,7 +62,7 @@ export default function PollsPage() {
       // Cleanup WebSocket subscription
       wsService.cleanup();
     };
-  }, [setPolls, updatePoll, deletePoll]);
+  }, [setPolls, updatePoll, deletePoll, wsService]);
 
   // Update filtered polls when main polls list changes
   useEffect(() => {

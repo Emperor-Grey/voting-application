@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { pollId: string } }
+  { params }: { params: Promise<{ pollId: string }> }
 ) {
   const searchParams = request.nextUrl.searchParams;
   const live = searchParams.get("live") === "true";
@@ -10,7 +10,11 @@ export async function GET(
   const creator = searchParams.get("creator");
 
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/polls/${params.pollId}/results?` +
+    `${process.env.NEXT_PUBLIC_API_URL}/api/polls/${
+      (
+        await params
+      ).pollId
+    }/results?` +
       new URLSearchParams({
         live: String(live),
         closed: String(closed),
@@ -19,5 +23,5 @@ export async function GET(
   );
 
   const data = await response.json();
-  return NextResponse.json(data);
+  return Response.json(data);
 }
