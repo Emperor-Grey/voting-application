@@ -30,7 +30,8 @@ export class WebSocketService {
 
     try {
       this.ws = new WebSocket(
-        process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:3003/ws/polls"
+        `${process.env.NEXT_PUBLIC_WS_URL}/ws/polls` ||
+          "ws://localhost:3003/ws/polls"
       );
 
       this.ws.onopen = () => {
