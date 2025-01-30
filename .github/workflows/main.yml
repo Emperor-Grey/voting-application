@@ -123,5 +123,5 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           script: |
-            docker compose pull
-            docker compose up -d --force-recreate
+            sudo docker compose pull
+            sudo docker compose up -d --force-recreate
