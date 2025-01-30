@@ -8,6 +8,7 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=http://16.171.137.206:3000
       - NEXT_PUBLIC_WS_URL=16.171.137.206:3003
+      - NODE_ENV=production
 
   backend:
     image: kinggrey/voting-application-backend:latest
