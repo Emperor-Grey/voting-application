@@ -1,0 +1,123 @@
+name: Build And Test
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log files
+        run: ls -al
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "yarn"
+          cache-dependency-path: polling-frontend/yarn.lock
+
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - name: cargo fmt
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: rustfmt
+
+      - name: Rustfmt Check
+        uses: actions-rust-lang/rustfmt@v1
+
+  dependencies:
+    needs: setup
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code Base
+        uses: actions/checkout@v4
+
+      - name: Log files
+        run: ls -al
+
+      - name: Install frontend Dependencies
+        working-directory: ./polling-frontend
+        run: yarn install
+
+      - name: Build frontend
+        working-directory: ./polling-frontend
+        env:
+          NEXT_PUBLIC_API_URL: https://voting-application-s45r.onrender.com
+          NEXT_PUBLIC_WS_URL: voting-application-s45r.onrender.com
+        run: yarn build
+
+      - name: Build Backend
+        working-directory: ./polling-backend
+        run: cargo build --release --verbose
+
+  deploy-docker:
+    needs: [setup, dependencies]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log into Docker Hub
+        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
+      # Build Frontend Docker Image
+      - name: Build Frontend Docker Image
+        run: |
+          docker build -t kinggrey/voting-application-frontend:latest ./polling-frontend
+          docker tag kinggrey/voting-application-frontend:latest kinggrey/voting-application-frontend:${{ github.sha }}
+
+      # Build Backend Docker Image
+      - name: Build Backend Docker Image
+        run: |
+          docker build -t kinggrey/voting-application-backend:latest ./polling-backend
+          docker tag kinggrey/voting-application-backend:latest kinggrey/voting-application-backend:${{ github.sha }}
+
+      # Push Frontend Docker Image
+      - name: Push Frontend Docker Image to Docker Hub
+        run: |
+          docker push kinggrey/voting-application-frontend:latest
+          docker push kinggrey/voting-application-frontend:${{ github.sha }}
+
+      # Push Backend Docker Image
+      - name: Push Backend Docker Image to Docker Hub
+        run: |
+          docker push kinggrey/voting-application-backend:latest
+          docker push kinggrey/voting-application-backend:${{ github.sha }}
+
+  deploy:
+    needs: [setup, dependencies, deploy-docker]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy docker-compose.yml to EC2
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          source: "compose.yaml"
+          target: "~/"
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          script: |
+            docker compose pull
+            docker compose up -d --force-recreate
