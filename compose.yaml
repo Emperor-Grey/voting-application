@@ -6,8 +6,8 @@ services:
     ports:
       - 3002:3002
     environment:
-      - NEXT_PUBLIC_API_URL=https://voting-application-s45r.onrender.com
-      - NEXT_PUBLIC_WS_URL=voting-application-s45r.onrender.com
+      - NEXT_PUBLIC_API_URL=http://16.171.137.206:3000
+      - NEXT_PUBLIC_WS_URL=16.171.137.206:3003
 
   backend:
     image: kinggrey/voting-application-backend:latest
@@ -15,6 +15,6 @@ services:
       - 3000:3000
       - 3003:3003
     environment:
-      - FRONTEND_URL=https://voting-application-seven.vercel.app
-      - RP_ID=voting-application-seven.vercel.app
-      - RP_ORIGIN=https://voting-application-seven.vercel.app
+      - FRONTEND_URL=http://16.171.137.206:3002
+      - RP_ID=16.171.137.206
+      - RP_ORIGIN=http://16.171.137.2063002

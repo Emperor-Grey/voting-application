@@ -34,7 +34,7 @@ export class WebSocketService {
 
       // Use WSS in production, WS in development
       const wsProtocol = isProduction ? "wss://" : "ws://";
-      const wsBaseUrl = process.env.NEXT_PUBLIC_WS_URL || "localhost:3003";
+      const wsBaseUrl = process.env.NEXT_PUBLIC_WS_URL || "16.171.137.206:3003";
 
       // Remove any existing protocol
       const cleanWsUrl = wsBaseUrl.replace(/^(wss?:\/\/)/, "");
