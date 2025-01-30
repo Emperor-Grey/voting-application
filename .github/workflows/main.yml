@@ -85,7 +85,7 @@ jobs:
       - name: Build Backend Docker Image
         working-directory: ./polling-backend
         run: |
-          docker build --build-arg FRONTEND_URL=http://16.171.137.206:3002 --build-arg RP_ID=16.171.137.206 --build-arg RP_ORIGIN=http://16.171.137.206:3002 -t kinggrey/voting-application-backend:latest .
+          docker build --build-arg FRONTEND_URL=http://16.171.137.206:3002 --build-arg RP_ID=16.171.137.206 --build-arg RP_ORIGIN=http://16.171.137.206:3002 --build-arg RUST_BACKTRACE=1 -t kinggrey/voting-application-backend:latest .
           docker tag kinggrey/voting-application-backend:latest kinggrey/voting-application-backend:${{ github.sha }}
 
       # Push Frontend Docker Image
