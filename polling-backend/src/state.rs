@@ -30,6 +30,10 @@ impl AppState {
                 .as_str(),
         )
         .expect("Invalid URL");
+
+        println!("Using RP_ID: {}", &rp_id);
+        println!("Using RP_ORIGIN: {}", &rp_origin);
+        
         let builder = WebauthnBuilder::new(&rp_id, &rp_origin).expect("Invalid configuration");
         let builder = builder.rp_name("Polling Application");
         let webauthn = Arc::new(builder.build().expect("Invalid configuration"));
