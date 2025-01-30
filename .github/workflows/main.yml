@@ -30,12 +30,12 @@ jobs:
           components: rustfmt, clippy
 
       - name: Run cargo fmt
-        run: |
-          cd polling-backend
-          cargo fmt --all
+        working-directory: ./polling-backend
+        run: cargo fmt --all
 
       - name: Rustfmt Check
-        uses: actions-rust-lang/rustfmt@v1
+        working-directory: ./polling-backend
+        run: cargo check
 
   dependencies:
     needs: setup
@@ -75,14 +75,16 @@ jobs:
 
       # Build Frontend Docker Image
       - name: Build Frontend Docker Image
+        working-directory: ./polling-frontend
         run: |
-          docker build -t kinggrey/voting-application-frontend:latest ./polling-frontend
+          docker build -t kinggrey/voting-application-frontend:latest .
           docker tag kinggrey/voting-application-frontend:latest kinggrey/voting-application-frontend:${{ github.sha }}
 
       # Build Backend Docker Image
       - name: Build Backend Docker Image
+        working-directory: ./polling-backend
         run: |
-          docker build -t kinggrey/voting-application-backend:latest ./polling-backend
+          docker build -t kinggrey/voting-application-backend:latest .
           docker tag kinggrey/voting-application-backend:latest kinggrey/voting-application-backend:${{ github.sha }}
 
       # Push Frontend Docker Image
