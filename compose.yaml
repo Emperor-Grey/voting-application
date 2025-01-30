@@ -2,24 +2,20 @@ services:
   frontend:
     depends_on:
       - backend
-    build:
-      context: ./polling-frontend
-      dockerfile: Dockerfile
-      args:
-        - NEXT_PUBLIC_API_URL=http://16.171.137.206:3000
-        - NEXT_PUBLIC_WS_URL=16.171.137.206:3003
-        - NODE_ENV=production
-      ports:
-        - 3002:3002
+    image: kinggrey/voting-application-frontend:latest
+    args:
+      - NEXT_PUBLIC_API_URL=http://16.171.137.206:3000
+      - NEXT_PUBLIC_WS_URL=16.171.137.206:3003
+      - NODE_ENV=production
+    ports:
+      - 3002:3002
     environment:
       - NEXT_PUBLIC_API_URL=http://16.171.137.206:3000
       - NEXT_PUBLIC_WS_URL=16.171.137.206:3003
       - NODE_ENV=production
 
   backend:
-    build:
-      context: ./polling-backend
-      dockerfile: Dockerfile
+    image: kinggrey/voting-application-backend:latest
     ports:
       - 3000:3000
       - 3003:3003
