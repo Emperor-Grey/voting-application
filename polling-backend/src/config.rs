@@ -14,7 +14,7 @@ pub fn setup_tracing() {
 
 pub fn setup_cors() -> CorsLayer {
     let frontend_urls: Vec<String> = std::env::var("FRONTEND_URL")
-        .unwrap_or_else(|_| "http://16.171.137.206:3002".to_string())
+        .unwrap_or_else(|_| "http://13.61.25.120:3002".to_string())
         .split(',')
         .map(|s| s.to_string())
         .collect();
