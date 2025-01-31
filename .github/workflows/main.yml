@@ -23,7 +23,6 @@ jobs:
             - Branch: `${{ github.ref_name }}`
             - Commit: `${{ github.sha }}`
             - Triggered by: `${{ github.actor }}`
-            - Status `${{ github.action_status }}`
 
   setup:
     needs: notify
