@@ -7,7 +7,25 @@ on:
     branches: ["master"]
 
 jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send notification for new push or merged pull request
+        uses: appleboy/discord-action@master
+        with:
+          webhook_id: ${{ secrets.DISCORD_WEBHOOK_ID }}
+          webhook_token: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
+          username: "GitHub Bot"
+          color: "#48f442"
+          message: |
+            😅 **Notification** 
+            - Event: `➡${{ github.event_name }}`
+            - Branch: `➡${{ github.ref_name }}`
+            - Commit: `➡${{ github.sha }}`
+            - Triggered by: `${{ github.actor }}`
+
   setup:
+    needs: notify
     runs-on: ubuntu-latest
 
     steps:
