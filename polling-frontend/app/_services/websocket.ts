@@ -35,7 +35,7 @@ export class WebSocketService {
       // Use WSS in production, WS in development
       const wsProtocol = isProduction ? "wss://" : "ws://";
       const wsBaseUrl =
-        process.env.NEXT_PUBLIC_WS_URL || "websocket.13.61.25.120.sslip.io";
+        process.env.NEXT_PUBLIC_WS_URL || "websocket.43.204.114.218.sslip.io";
 
       // Remove any existing protocol
       const cleanWsUrl = wsBaseUrl.replace(/^(wss?:\/\/)/, "");

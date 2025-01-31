@@ -22,10 +22,11 @@ impl Default for AppState {
 
 impl AppState {
     pub fn new() -> Self {
-        let rp_id = std::env::var("RP_ID").unwrap_or("frontend.13.61.25.120.sslip.io".to_string());
+        let rp_id =
+            std::env::var("RP_ID").unwrap_or("frontend.43.204.114.218.sslip.io".to_string());
         let rp_origin = Url::parse(
             std::env::var("RP_ORIGIN")
-                .unwrap_or("https://frontend.13.61.25.120.sslip.io".to_string())
+                .unwrap_or("https://frontend.43.204.114.218.sslip.io".to_string())
                 .as_str(),
         )
         .expect("Invalid URL");
