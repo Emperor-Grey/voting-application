@@ -18,11 +18,12 @@ jobs:
           username: "GitHub Bot"
           color: "#48f442"
           message: |
-            😅 **Notification** 
-            - Event: `➡${{ github.event_name }}`
-            - Branch: `➡${{ github.ref_name }}`
-            - Commit: `➡${{ github.sha }}`
+            🔮 **Notification** 
+            - Event: `${{ github.event_name }}`
+            - Branch: `${{ github.ref_name }}`
+            - Commit: `${{ github.sha }}`
             - Triggered by: `${{ github.actor }}`
+            - Status `${{ github.action_status }}`
 
   setup:
     needs: notify
