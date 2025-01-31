@@ -4,19 +4,18 @@ services:
       - backend
     image: "kinggrey/voting-application-frontend:latest"
     ports:
-      - "3000:3000"
-      - "3003:3003"
+      - "127.0.0.1:3002:3002"
     environment:
-      - "NEXT_PUBLIC_API_URL=https://backend.43.204.114.218.sslip.io"
-      - "NEXT_PUBLIC_WS_URL=websocket.43.204.114.218.sslip.io"
+      - "NEXT_PUBLIC_API_URL=https://backend.65.0.27.3.sslip.io"
+      - "NEXT_PUBLIC_WS_URL=websocket.65.0.27.3.sslip.io"
       - "NODE_ENV=production"
 
   backend:
     image: "kinggrey/voting-application-backend:latest"
     ports:
-      - "3002:3002"
+      - "127.0.0.1:3000:3000"
     environment:
-      - "FRONTEND_URL=https://frontend.43.204.114.218.sslip.io"
-      - "RP_ID=frontend.43.204.114.218.sslip.io"
-      - "RP_ORIGIN=https://frontend.43.204.114.218.sslip.io"
+      - "FRONTEND_URL=https://frontend.65.0.27.3.sslip.io"
+      - "RP_ID=frontend.65.0.27.3.sslip.io"
+      - "RP_ORIGIN=https://frontend.65.0.27.3.sslip.io"
       - "RUST_BACKTRACE=1"

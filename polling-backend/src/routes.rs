@@ -68,7 +68,7 @@ pub fn poll_routes() -> Router<AppState> {
 
 pub fn websocket_routes() -> Router<AppState> {
     let frontend_urls: Vec<String> = std::env::var("FRONTEND_URL")
-        .unwrap_or_else(|_| "https://frontend.43.204.114.218.sslip.io".to_string())
+        .unwrap_or_else(|_| "https://frontend.65.0.27.3.sslip.io".to_string())
         .split(',')
         .map(|s| s.to_string())
         .collect();
