@@ -2,6 +2,8 @@
 
 A secure polling application built with **Rust** (backend) and **Next.js** (frontend) that utilizes **WebAuthn** for passwordless authentication and **real-time updates**.
 
+**Note**: I didn’t use a database and also leveraged WebSockets to deepen my understanding of Rust. I could have also used Server-Sent Events (SSE), but I opted for WebSockets for this learning experience.
+
 [![Build](https://github.com/Emperor-Grey/voting-application/actions/workflows/main.yml/badge.svg)](https://github.com/Emperor-Grey/voting-application/actions/workflows/main.yml)
 
 ## Features
@@ -92,7 +94,6 @@ A secure polling application built with **Rust** (backend) and **Next.js** (fron
 2. Create a `.env` file in the root directory with the following configuration:
 
    ```env
-   DATABASE_URL=mysql://user:password@localhost/dbname
    RP_ID=localhost
    RP_ORIGIN=http://localhost:3000
    FRONTEND_URL=http://localhost:3000
