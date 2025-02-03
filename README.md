@@ -3,7 +3,7 @@
 
 A secure polling application built with **Rust** (backend) and **Next.js** (frontend) that utilizes **WebAuthn** for passwordless authentication and **real-time updates**.
 
-[![Build And Test](https://github.com/Emperor-Grey/voting-application/actions/workflows/main.yml/badge.svg?event=status)](https://github.com/Emperor-Grey/voting-application/actions/workflows/main.yml)
+[![Build And Test](https://github.com/Emperor-Grey/voting-application/actions/workflows/main.yml/badge.svg)](https://github.com/Emperor-Grey/voting-application/actions/workflows/main.yml)
 
 ## Features
 
