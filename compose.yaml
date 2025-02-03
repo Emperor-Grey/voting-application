@@ -6,8 +6,8 @@ services:
     ports:
       - "127.0.0.1:3002:3002"
     environment:
-      - "NEXT_PUBLIC_API_URL=https://backend.65.0.27.3.sslip.io"
-      - "NEXT_PUBLIC_WS_URL=websocket.65.0.27.3.sslip.io"
+      - "NEXT_PUBLIC_API_URL=https://backend.3.108.234.78.sslip.io"
+      - "NEXT_PUBLIC_WS_URL=websocket.3.108.234.78.sslip.io"
       - "NODE_ENV=production"
 
   backend:
@@ -15,7 +15,7 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     environment:
-      - "FRONTEND_URL=https://frontend.65.0.27.3.sslip.io"
-      - "RP_ID=frontend.65.0.27.3.sslip.io"
-      - "RP_ORIGIN=https://frontend.65.0.27.3.sslip.io"
+      - "FRONTEND_URL=https://frontend.3.108.234.78.sslip.io"
+      - "RP_ID=frontend.3.108.234.78.sslip.io"
+      - "RP_ORIGIN=https://frontend.3.108.234.78.sslip.io"
       - "RUST_BACKTRACE=1"
