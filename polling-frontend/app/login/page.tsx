@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/app/_components/ui/input";
 import { startAuthenticationFlow } from "../_lib/api";
+import { toast } from "../_hooks/use-toast";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -25,10 +26,23 @@ export default function LoginPage() {
       await startAuthenticationFlow(username);
       setAuthenticated(username);
       router.push("/polls");
+
+      toast({
+        title: "Success",
+        description: "You have successfully logged in!",
+      });
     } catch (err) {
       console.error(err);
+      const errorMessage =
+        (err as any).response?.data?.message ||
+        "Login failed. Please try again.";
 
       setError((err as any).response?.data?.message);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

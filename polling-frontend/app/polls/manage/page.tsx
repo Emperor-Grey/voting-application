@@ -22,11 +22,11 @@ export default function ManagePollsPage() {
     fetchUserPolls();
   }, [username, setPolls]);
 
-  const fetchUserPolls = async () => {
-    const response = await fetch(`/api/polls?creator=${username}`);
-    const data = await response.json();
-    setPolls(data);
-  };
+  // const fetchUserPolls = async () => {
+  //   const response = await fetch(`/api/polls?creator=${username}`);
+  //   const data = await response.json();
+  //   setPolls(data);
+  // };
 
   const handleDeletePoll = async (pollId: string) => {
     try {
@@ -66,7 +66,6 @@ export default function ManagePollsPage() {
     _pollId: string,
     _optionId: string
   ): Promise<void> => {
-    // Since we don't want to allow voting from manage page, we'll return an empty promise
     return Promise.resolve();
   };
 

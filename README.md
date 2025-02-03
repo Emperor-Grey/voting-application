@@ -1,4 +1,3 @@
-
 # Polling Application with WebAuthn Authentication
 
 A secure polling application built with **Rust** (backend) and **Next.js** (frontend) that utilizes **WebAuthn** for passwordless authentication and **real-time updates**.
@@ -17,6 +16,7 @@ A secure polling application built with **Rust** (backend) and **Next.js** (fron
 ## Tech Stack
 
 ### Backend (Rust)
+
 - **Web Framework**: [Axum](https://github.com/tokio-rs/axum)
 - **WebSocket**: tokio-tungstenite
 - **Authentication**: [WebAuthn-rs](https://github.com/kanidm/webauthn-rs)
@@ -27,6 +27,7 @@ A secure polling application built with **Rust** (backend) and **Next.js** (fron
 - **Logging**: tracing & tracing-subscriber
 
 ### Frontend (Next.js)
+
 - **Framework**: Next.js 15+ (App Router)
 - **Styling**: Tailwind CSS with CSS Variables
 - **UI Components**: shadcn/ui
@@ -72,6 +73,7 @@ A secure polling application built with **Rust** (backend) and **Next.js** (fron
 ## Getting Started
 
 ### Prerequisites
+
 - Rust 1.70+
 - Node.js 18+
 - MySQL Database
@@ -82,23 +84,25 @@ A secure polling application built with **Rust** (backend) and **Next.js** (fron
 ### Backend Setup
 
 1. Clone the repository:
-    ```bash
-    git clone https://github.com/Emperor-Grey/voting-application.git
-    ```
+
+   ```bash
+   git clone https://github.com/Emperor-Grey/voting-application.git
+   ```
 
 2. Create a `.env` file in the root directory with the following configuration:
-    ```env
-    DATABASE_URL=mysql://user:password@localhost/dbname
-    RP_ID=localhost
-    RP_ORIGIN=http://localhost:3000
-    FRONTEND_URL=http://localhost:3000
-    ```
+
+   ```env
+   DATABASE_URL=mysql://user:password@localhost/dbname
+   RP_ID=localhost
+   RP_ORIGIN=http://localhost:3000
+   FRONTEND_URL=http://localhost:3000
+   ```
 
 3. Run the backend server:
-    ```bash
-    cd polling-backend
-    cargo run
-    ```
+   ```bash
+   cd polling-backend
+   cargo run
+   ```
    The backend server will start on [http://localhost:3000](http://localhost:3000).
 
 ---
@@ -106,29 +110,33 @@ A secure polling application built with **Rust** (backend) and **Next.js** (fron
 ### Frontend Setup
 
 1. Navigate to the frontend directory:
-    ```bash
-    cd polling-frontend
-    ```
+
+   ```bash
+   cd polling-frontend
+   ```
 
 2. Install dependencies:
-    ```bash
-    npm install
-    # or
-    yarn install
-    ```
+
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
 
 3. Create a `.env.local` file with:
-    ```env
-    NEXT_PUBLIC_WS_URL=ws://localhost:3003/ws/polls
-    NEXT_PUBLIC_API_URL=http://localhost:3000
-    ```
+
+   ```env
+   NEXT_PUBLIC_WS_URL=ws://localhost:3003/ws/polls
+   NEXT_PUBLIC_API_URL=http://localhost:3000
+   ```
 
 4. Start the development server:
-    ```bash
-    npm run dev
-    # or
-    yarn dev
-    ```
+
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
 
    The frontend will be available at [http://localhost:3002](http://localhost:3002).
 
@@ -137,6 +145,7 @@ A secure polling application built with **Rust** (backend) and **Next.js** (fron
 ## API Endpoints
 
 ### Authentication
+
 - `POST /auth/register/start/:username` - Start the registration flow
 - `POST /auth/register/finish` - Complete registration
 - `POST /auth/login/start/:username` - Start authentication flow
@@ -144,6 +153,7 @@ A secure polling application built with **Rust** (backend) and **Next.js** (fron
 - `GET /auth/me` - Get current user
 
 ### Polls
+
 - `GET /api/polls` - List all polls
 - `POST /api/polls` - Create a new poll
 - `GET /api/polls/:id` - Get poll details

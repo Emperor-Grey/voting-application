@@ -8,6 +8,7 @@ import { Input } from "@/app/_components/ui/input";
 import { Label } from "@/app/_components/ui/label";
 import { PlusCircle, Trash2 } from "lucide-react";
 import { CreatePollRequest } from "@/app/_types/poll";
+import { toast } from "../_hooks/use-toast";
 
 export default function CreatePollForm() {
   const [title, setTitle] = useState("");
@@ -80,12 +81,24 @@ export default function CreatePollForm() {
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         data = await response.json();
+        toast({
+          title: "Success",
+          description: "You have successfully Created the poll",
+        });
       } else {
         const text = await response.text();
+        toast({
+          title: "Failed",
+          description: "You have successfully Failed to create the poll.",
+        });
         throw new Error(text || "Failed to create poll");
       }
 
       if (!response.ok) {
+        toast({
+          title: "Failed",
+          description: "You have successfully Failed to create the poll.",
+        });
         throw new Error(data.message || "Failed to create poll");
       }
 
@@ -94,6 +107,10 @@ export default function CreatePollForm() {
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : "Failed to create poll");
+      toast({
+        title: "Failed",
+        description: "You have successfully Failed to create the poll.",
+      });
     } finally {
       setIsLoading(false);
     }

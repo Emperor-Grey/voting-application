@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -7,6 +8,7 @@ import { Label } from "../_components/ui/label";
 import { Input } from "../_components/ui/input";
 import { Button } from "../_components/Button";
 import Link from "next/link";
+import { toast } from "../_hooks/use-toast";
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
@@ -22,9 +24,25 @@ export default function RegisterPage() {
     try {
       await startRegistrationFlow(username);
       router.push("/login");
+
+      toast({
+        title: "Success",
+        description: "You have successfully Registered!",
+      });
     } catch (err) {
       console.error(err);
-      setError("Registration failed. Please try again.");
+
+      const errorMessage =
+        (err as any).response?.data?.message ||
+        "Login failed. Please try again.";
+
+      setError((err as any).response?.data?.message);
+
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

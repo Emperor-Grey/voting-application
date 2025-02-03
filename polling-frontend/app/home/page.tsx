@@ -9,7 +9,7 @@ export default function HomePage() {
 
   const handleLogout = () => {
     logout();
-    router.push("/login");
+    router.push("/");
   };
 
   return (
